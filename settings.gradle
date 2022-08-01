@@ -1,0 +1,19 @@
+// buildscript repo's
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        maven {
+            url 'https://papermc.io/repo/repository/maven-public/'
+        }
+    }
+}
+
+// project name
+rootProject.name = "j8"
+
+// modules
+include 'j8-util'
+include 'j8s-util'
+include 'j8s-command'
+include 'j8-registry'
+

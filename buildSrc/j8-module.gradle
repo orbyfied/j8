@@ -1,0 +1,91 @@
+if (hasPaper) {
+    // for minecraft
+    apply plugin: 'io.papermc.paperweight.userdev'
+}
+
+boolean ipa() {
+    return plugins.hasPlugin("io.papermc.paperweight.userdev")
+}
+
+if (ipa()) {
+    System.out.println(project.name + ": Paperweight Userdev found.")
+}
+
+ext {
+    // Minecraft Version
+    minecraftVersion = "1.18.2"
+}
+
+// Properties
+group rootProject.group
+
+java {
+    // Configure the java toolchain. This allows gradle to auto-provision JDK 17 on systems that only have JDK 8 installed for example.
+    toolchain.languageVersion.set(JavaLanguageVersion.of(17))
+}
+
+// Task Configuration
+
+tasks {
+
+    if (ipa())
+        assemble {
+            dependsOn(shadowJar, reobfJar) }
+
+    compileJava {
+        options.encoding = "utf8"
+        options.release.set(17) }
+    javadoc {
+        options.encoding = "utf8" }
+    processResources {
+        filteringCharset = "utf8" }
+
+    // set jar format
+    final String format = project.name + "-${project.version}+${project.minecraftVersion}.jar"
+    if (ipa()) {
+        reobfJar {
+            outputJar.set(file("../builds/" + format))
+        }
+    } else {
+        shadowJar {
+            outputFile = file("../builds/" + format)
+        }
+    }
+
+}
+
+// Dependencies
+
+repositories {
+    mavenCentral()
+    mavenLocal()
+
+    // tried to use mixins lol
+    maven { url = "https://repo.spongepowered.org/repository/maven-public/" }
+}
+
+dependencies {
+
+    if (ipa()) {
+        // Minecraft
+        paperweightDevelopmentBundle("io.papermc.paper:dev-bundle:" + minecraftVersion + "-R0.1-SNAPSHOT")
+    }
+
+    // External Libraries
+    // ...
+
+    if (hasTesting) {
+        // Test Dependencies
+        testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
+        testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
+    }
+
+}
+
+// Test Configuration
+if (hasTesting) {
+    test {
+        // enable JUnit for testing
+        useJUnitPlatform()
+    }
+}
