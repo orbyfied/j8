@@ -16,4 +16,6 @@ include 'j8-util'
 include 'j8s-util'
 include 'j8s-command'
 include 'j8-registry'
+include 'j8-event'
+include 'j8s-config'
 

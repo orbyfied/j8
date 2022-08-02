@@ -9,6 +9,8 @@ boolean ipa() {
 
 if (ipa()) {
     System.out.println(project.name + ": Paperweight Userdev found.")
+} else if (hasPaper) {
+    System.out.println(project.name + ": /!\\ Paperweight Userdev not found, while 'hasPaper' is 'true'.")
 }
 
 ext {
