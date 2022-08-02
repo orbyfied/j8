@@ -26,7 +26,7 @@ public class Flag<T> {
     final ParameterType<T> type;
 
     /**
-     * The default value of this flag.
+     * Default value.
      */
     T def;
 
@@ -35,29 +35,20 @@ public class Flag<T> {
      */
     boolean isSwitch;
 
-    /**
-     * The value to set if the switch is on.
-     */
-    T switchValue;
-
     public Flag(
             Selecting owner,
             String name,
             Character ch,
             ParameterType<T> type,
-            T def,
 
-            boolean isSwitch,
-            T switchValue
+            boolean isSwitch
     ) {
         this.owner = owner;
         this.name  = name;
         this.ch    = ch;
         this.type  = type;
-        this.def   = def;
 
         this.isSwitch    = isSwitch;
-        this.switchValue = switchValue;
     }
 
     public Selecting getOwner() {
@@ -76,16 +67,17 @@ public class Flag<T> {
         return type;
     }
 
-    public T getDefault() {
-        return def;
-    }
-
     public boolean isSwitch() {
         return isSwitch;
     }
 
-    public T getSwitchValue() {
-        return switchValue;
+    public Flag<T> setDefault(T def) {
+        this.def = def;
+        return this;
+    }
+
+    public T getDefault() {
+        return def;
     }
 
 }

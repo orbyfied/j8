@@ -259,6 +259,34 @@ public class Context {
         return this;
     }
 
+    public List<Flag<?>> getFlags() {
+        return flags;
+    }
+
+    public Flag<?> getFlagByName(String name) {
+        return flagsByName.get(name);
+    }
+
+    public Flag<?> getFlagByCharacter(char c) {
+        return flagsByChar.get(c);
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T> T getFlagValue(String name) {
+        T res;
+        Flag<T> flag = (Flag<T>) flagsByName.get(name);
+        if (!flagValues.containsKey(flag))
+            res = flag.getDefault();
+        else
+            res = (T) flagValues.get(flag);
+        return res;
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T> T getFlagValue(String name, Class<T> tClass) {
+        return (T) flagValues.get(flagsByName.get(name));
+    }
+
     ///////////////////////////////////
 
     /**

@@ -1,6 +1,7 @@
 package net.orbyfied.j8.command.annotation;
 
 import net.orbyfied.j8.command.*;
+import net.orbyfied.j8.command.parameter.Flag;
 import net.orbyfied.j8.command.parameter.Parameter;
 import net.orbyfied.j8.command.parameter.ParameterType;
 import net.orbyfied.j8.command.parameter.TypeIdentifier;
@@ -67,17 +68,55 @@ public class SubcommandParser {
             char c1;
 
             // parse executable (subcommand)
-            if ((c1 = reader.current()) != '[' && c1 != '<') {
+            if ((c1 = reader.current()) != '[' && c1 != '<' && c1 != '-') {
                 // collect name
                 String component = reader.collect(c -> c != ' ', 1);
 
                 // create and set node
                 current = current.getOrCreateSubnode(component,
                         parent -> new Node(component, parent, parent.getRoot())
-                        .makeExecutable(null));
+                                .makeExecutable(null));
 
                 // store state
                 last = current;
+            } else if (c1 == '-') { // parse flag declaration
+                if (reader.peek(1) == '-')
+                    reader.next();
+
+                // get name
+                String name = reader.collect(c -> c != '/' && c != '(');
+                // get character
+                Character c = null;
+                if (reader.current() == '/') {
+                    c = reader.next();
+                    reader.next();
+                }
+
+                if (reader.current() != '(')
+                    throw new AnnotationProcessingException("Expected '(' to open type and flag declaration");
+
+                // parse type
+                reader.next();
+                TypeIdentifier tid = TypeIdentifier.of(reader.collect(c2 -> c2 != ' ' && c2 != ')'));
+                ParameterType<?> type = engine.getTypeResolver().compile(tid);
+
+                // parse if switch
+                boolean isSwitch = false;
+                while (reader.current() == ' ') {
+                    switch (reader.next()) {
+                        case 's' -> isSwitch = true;
+                    }
+                    reader.next();
+                }
+
+                // close
+                if (reader.current() != ')')
+                    throw new AnnotationProcessingException("Expected ')' to close type and flag declaration");
+
+                // create and add flag
+                Executable sel = last.getComponent(Executable.class);
+                Flag<?> flag = new Flag<>(sel, name, c, type, isSwitch);
+                sel.getFlags().add(flag);
             } else { // parse parameter
                 // check if it is required
                 boolean isReq = reader.current() == '<';

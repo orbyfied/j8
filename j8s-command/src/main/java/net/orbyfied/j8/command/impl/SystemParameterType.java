@@ -251,6 +251,23 @@ public class SystemParameterType {
 
     /**
      * Accepts formats as:
+     * - {@code 0}
+     * - {@code 1}
+     * - {@code false}
+     * - {@code true}
+     * {@link Boolean}
+     */
+    public static final ParameterType<Boolean> BOOLEAN = of(Boolean.class, "system:bool",
+            (context, reader) -> reader.current() == '0' || reader.current() == '1' || reader.current() == 't' || reader.current() == 'f',
+            ((context, reader) -> {
+                String str = reader.collect(c -> c != ' ');
+                return "1".equals(str) || "true".equals(str);
+            }),
+            (context, builder, value) -> builder.append(value)
+    );
+
+    /**
+     * Accepts formats as:
      * - {@code 14}
      * - {@code 0x06}
      * - {@code 0o93}

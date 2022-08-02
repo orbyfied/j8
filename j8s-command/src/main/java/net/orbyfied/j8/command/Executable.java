@@ -1,8 +1,11 @@
 package net.orbyfied.j8.command;
 
 import net.orbyfied.j8.command.impl.CommandNodeExecutor;
+import net.orbyfied.j8.command.parameter.Flag;
 import net.orbyfied.j8.util.StringReader;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 public class Executable
@@ -15,6 +18,8 @@ public class Executable
 
     private CommandNodeExecutor walkExecutor;
     private CommandNodeExecutor executor;
+
+    private List<Flag<?>> flags = new ArrayList<>();
 
     private Set<String> aliases = Set.of(node.getAliases().toArray(new String[0]));
 
@@ -41,6 +46,14 @@ public class Executable
         reader.collect(c -> c != ' ');
         if (walkExecutor != null)
             executor.execute(ctx, node);
+
+        // push flags
+        for (Flag<?> flag : flags)
+            ctx.pushFlag(flag);
+    }
+
+    public List<Flag<?>> getFlags() {
+        return flags;
     }
 
     @Override

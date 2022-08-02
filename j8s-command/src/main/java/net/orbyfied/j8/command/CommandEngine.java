@@ -224,7 +224,7 @@ public abstract class CommandEngine {
                                         "Flag --" + flagName + " is not a switch, but no value was provided.");
 
                             // parse switch
-                            context.flagValues.put(flag, flag.getSwitchValue());
+                            context.flagValues.put(flag, true);
                         }
                     } else {
                         // get the characters in the specifier
@@ -243,7 +243,7 @@ public abstract class CommandEngine {
                                             new ErrorLocation(reader, sidx + 1, reader.index()),
                                             "Flag -" + c + " is not a switch, but no value was provided.");
 
-                                context.flagValues.put(flag, flag.getSwitchValue());
+                                context.flagValues.put(flag, true);
 
                                 // advance
                                 reader.next();
