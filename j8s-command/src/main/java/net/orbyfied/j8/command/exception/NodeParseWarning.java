@@ -17,8 +17,4 @@ public class NodeParseWarning extends NodeParseException implements Warning {
         super(rootCommand, node, loc, msg, e);
     }
 
-    @Override
-    public String getErrorName() {
-        return "node parse warning";
-    }
 }

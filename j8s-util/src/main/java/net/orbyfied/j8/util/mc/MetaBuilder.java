@@ -1,6 +1,6 @@
 package net.orbyfied.j8.util.mc;
 
-import net.orbyfied.carbon.util.TextFormatting;
+import net.orbyfied.j8.util.TextFormatting;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemFlag;
@@ -26,7 +26,7 @@ public class MetaBuilder<V extends ItemMeta, Self extends MetaBuilder<V, ?>> {
      * Constructs a new builder with the initial item
      * meta set to the appropriate item meta for the supplied material.
      * @param material The material to create the item meta for.
-     *                 For example: If you have a MetaBuilder<CompassMeta>, you
+     *                 For example: If you have a MetaBuilder of CompassMeta, you
      *                 want to use <code>Material.COMPASS</code> as parameter.
      * @return The new builder.
      */

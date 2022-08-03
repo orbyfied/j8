@@ -1,3 +1,5 @@
+import java.nio.charset.StandardCharsets
+
 if (hasPaper) {
     // for minecraft
     apply plugin: 'io.papermc.paperweight.userdev'
@@ -7,15 +9,26 @@ boolean ipa() {
     return plugins.hasPlugin("io.papermc.paperweight.userdev")
 }
 
+boolean ipl() {
+    return plugins.hasPlugin("java-library")
+}
+
+boolean hasPublishing() {
+    return plugins.hasPlugin("maven-publish") && plugins.hasPlugin("signing")
+}
+
 if (ipa()) {
     System.out.println(project.name + ": Paperweight Userdev found.")
 } else if (hasPaper) {
     System.out.println(project.name + ": /!\\ Paperweight Userdev not found, while 'hasPaper' is 'true'.")
 }
 
-ext {
-    // Minecraft Version
-    minecraftVersion = "1.18.2"
+// Load External Data
+File getResourceInRoot(String str) {
+    File res = new File("./" + str)
+    if (!res.exists())
+        res = new File("../" + str)
+    return res
 }
 
 // Properties
@@ -28,11 +41,42 @@ java {
 
 // Task Configuration
 
+java {
+    if (ipl()) {
+        withJavadocJar()
+        withSourcesJar()
+    }
+}
+
+if (ipl()) {
+    javadoc {
+        boolean verbose = false
+        if (project.hasProperty("jdVerbose"))
+            verbose = jdVerbose
+        options.outputLevel = verbose ? JavadocOutputLevel.VERBOSE : JavadocOutputLevel.QUIET
+        if (JavaVersion.current().isJava9Compatible()) {
+            options.addBooleanOption("html5", true)
+        }
+    }
+}
+
+if (hasPublishing()) {
+    publish.dependsOn.add(tasks.jar)
+}
+
+//jar.doLast {
+//    File lf = new File(buildDir, "libs");
+//    for (File f : lf.listFiles()) {
+//        f.renameTo(new File(lf, f.getName().replace("-dev", "")))
+//    }
+//}
+
 tasks {
 
-    if (ipa())
+    if (ipa()) {
         assemble {
             dependsOn(shadowJar, reobfJar) }
+    }
 
     compileJava {
         options.encoding = "utf8"
@@ -49,7 +93,7 @@ tasks {
             outputJar.set(file("../builds/" + format))
         }
     } else {
-        shadowJar {
+        jar {
             outputFile = file("../builds/" + format)
         }
     }
@@ -85,9 +129,93 @@ dependencies {
 }
 
 // Test Configuration
+
 if (hasTesting) {
     test {
         // enable JUnit for testing
         useJUnitPlatform()
     }
+}
+
+// Publishing
+
+if (hasPublishing()) {
+
+    publishing {
+
+        publications {
+
+            mavenJava(MavenPublication) {
+
+                // publication properties
+                groupId = project.group
+                artifactId = project.name
+                version = project.version
+
+                // include java code
+                from components.java
+
+                pom {
+                    // pom.xml properties
+                    name = project.name
+
+                    String descStr = null
+                    if (project.hasProperty("desc"))
+                        descStr = project.desc
+                    description = "j8 Module " + project.name + (descStr != null ? " - " + descStr : "")
+
+                    url = "https://github.com/orbyfied/j8"
+                    inceptionYear = "2022"
+
+                    // licensing
+                    licenses {
+                        license {
+                            name = "Apache License 2.0"
+                            url = "https://www.apache.org/licenses/LICENSE-2.0"
+                        }
+                    }
+
+                    // developers
+                    developers {
+                        developer {
+                            id = "orbyfied"
+                            name = "orbyfied"
+                            email = ""
+                        }
+                    }
+
+                    // SCM
+                    scm {
+                        connection = "scm:git:git:github.com/orbyfied/j8.git"
+                        developerConnection = "scm:git:ssh://github.com/orbyfied/j8.git"
+                        url = "https://github.com/orbyfied/j8.git"
+                    }
+
+
+                }
+
+            }
+
+        }
+
+        // publishing repositories
+        repositories {
+            // Maven Central
+            maven {
+                name = "OSSRH"
+                url = "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2"
+                credentials {
+                    username = project.properties["ossrh.username"]
+                    password = project.properties["ossrh.password"]
+                }
+            }
+        }
+
+    }
+
+    // Publication Signing
+    signing {
+        sign publishing.publications.mavenJava
+    }
+
 }

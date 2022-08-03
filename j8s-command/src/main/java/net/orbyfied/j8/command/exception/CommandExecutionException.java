@@ -18,6 +18,6 @@ public class CommandExecutionException extends CommandException {
 
     @Override
     public String getErrorName() {
-        return "execution error";
+        return "Execution";
     }
 }

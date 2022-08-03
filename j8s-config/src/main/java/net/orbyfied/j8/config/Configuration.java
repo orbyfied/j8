@@ -90,7 +90,7 @@ public interface Configuration {
             }
 
         } catch (Exception e) {
-            throw new net.orbyfied.carbon.config.ConfigurationException("failed to load configuration", e);
+            throw new ConfigurationException("failed to load configuration", e);
         }
     }
 
@@ -116,7 +116,7 @@ public interface Configuration {
                 if (desc == null) continue;
 
                 // get comment descriptor
-                net.orbyfied.carbon.config.Comment comment = field.getAnnotation(net.orbyfied.carbon.config.Comment.class);
+                Comment comment = field.getAnnotation(Comment.class);
                 if (comment != null) {
                     List<String> list = new ArrayList<>(config.getComments(""));
                     list.addAll(Arrays.asList(comment.value().split("\n")));
@@ -149,7 +149,7 @@ public interface Configuration {
             }
 
         } catch (Exception e) {
-            throw new net.orbyfied.carbon.config.ConfigurationException("failed to load configuration", e);
+            throw new ConfigurationException("failed to load configuration", e);
         }
     }
 

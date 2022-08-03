@@ -1,7 +1,10 @@
 package net.orbyfied.j8.command;
 
+import net.orbyfied.j8.command.component.*;
+import net.orbyfied.j8.command.component.Properties;
 import net.orbyfied.j8.command.impl.CommandNodeExecutor;
 import net.orbyfied.j8.command.impl.DefaultSuggester;
+import net.orbyfied.j8.command.parameter.Flag;
 import net.orbyfied.j8.command.parameter.Parameter;
 import net.orbyfied.j8.command.parameter.ParameterType;
 import net.orbyfied.j8.util.ReflectionUtil;
@@ -110,7 +113,7 @@ public class Node {
         return Collections.unmodifiableList(aliases);
     }
 
-    public Node getRoot() {
+    public Node root() {
         return root;
     }
 
@@ -140,18 +143,22 @@ public class Node {
         return this;
     }
 
-    public <T extends NodeComponent> Node component(Class<T> tClass,
-                                                    Function<Node, T> constructor,
-                                                    BiConsumer<Node, T> consumer) {
+    public <T extends NodeComponent> T component(Class<T> tClass,
+                                                 Function<Node, T> constructor) {
         T c = getComponent(tClass);
         if (c != null) {
-            if (consumer != null)
-                consumer.accept(this, c);
-            return this;
+            return c;
         }
 
         c = constructor.apply(this);
         addComponent(c);
+        return c;
+    }
+
+    public <T extends NodeComponent> Node component(Class<T> tClass,
+                                                    Function<Node, T> constructor,
+                                                    BiConsumer<Node, T> consumer) {
+        T c = component(tClass, constructor);
         if (consumer != null)
             consumer.accept(this, c);
         return this;
@@ -247,7 +254,7 @@ public class Node {
         return node;
     }
 
-    public Selecting getSubnode(Context ctx, StringReader reader) {
+    public Selecting getNextSubnode(Context ctx, StringReader reader) {
         if (reader.current() == StringReader.DONE)
             return null;
         Node node;
@@ -260,12 +267,26 @@ public class Node {
         return null;
     }
 
+    public Node processWalked(Context context, StringReader reader) {
+        for (NodeComponent component : components)
+            if (!(component instanceof Selecting) && component instanceof Functional fc)
+                fc.walked(context, reader);
+        return this;
+    }
+
+    public Node processExecute(Context context) {
+        for (NodeComponent component : components)
+            if (!(component instanceof Selecting) && component instanceof Functional fc)
+                fc.execute(context);
+        return this;
+    }
+
     /* QOL Methods. */
 
     public Node propertied(String desc, String label, String usage) {
         component(
-                CommandProperties.class,
-                CommandProperties::new,
+                Properties.class,
+                Properties::new,
                 (node, rcp) -> rcp
                         .description(desc)
                         .label(label)
@@ -274,48 +295,72 @@ public class Node {
         return this;
     }
 
-    public Node makeExecutable(CommandNodeExecutor executor) {
+    public Node executes(CommandNodeExecutor executor) {
         addComponent(new Executable(this)).setExecutor(executor);
         return this;
     }
 
-    public Node makeExecutable(CommandNodeExecutor executor, CommandNodeExecutor walked) {
+    public Node executes(CommandNodeExecutor executor, CommandNodeExecutor walked) {
         addComponent(new Executable(this)).setExecutor(executor).setWalkExecutor(walked);
         return this;
     }
 
-    public Node makeParameter(ParameterType<?> type) {
+    public Node parameter(ParameterType<?> type) {
         addComponent(new Parameter(this)).setType(type);
         return this;
     }
 
-    public Node childParameter(String name,
-                               ParameterType<?> type) {
+    public Node permission(String perm) {
+        component(Secure.class, Secure::new, (node, secure) ->
+                secure.setPermission(perm));
+        return this;
+    }
+
+    public Node flag(Flag<?> flag) {
+        component(Flags.class, Flags::new, (node, flags) ->
+                flags.addFlag(flag));
+        return this;
+    }
+
+    public Node flag(String name, Character ch, ParameterType<?> type, boolean isSwitch) {
+        component(Flags.class, Flags::new, (node, flags) ->
+                flags.addFlag(name, ch, type, isSwitch));
+        return this;
+    }
+
+    public Node flag(String name, ParameterType<?> type) {
+        component(Flags.class, Flags::new, (node, flags) ->
+                flags.addFlag(name, null, type, false));
+        return this;
+    }
+
+    public Node thenParameter(String name,
+                              ParameterType<?> type) {
         Node node = new Node(name, this, root);
-        node.makeParameter(type);
+        node.parameter(type);
         this.addChild(node);
         return node;
     }
 
-    public Node childParameter(String name,
-                               ParameterType<?> type,
-                               BiConsumer<Node, Parameter> consumer) {
-        Node node = childParameter(name, type);
+    public Node thenParameter(String name,
+                              ParameterType<?> type,
+                              BiConsumer<Node, Parameter> consumer) {
+        Node node = thenParameter(name, type);
         if (consumer != null)
             consumer.accept(node, node.getComponent(Parameter.class));
         return this;
     }
 
-    public Node childExecutable(String name, CommandNodeExecutor executor) {
+    public Node thenExecute(String name, CommandNodeExecutor executor) {
         Node node = new Node(name, this, root);
-        node.makeExecutable(executor);
+        node.executes(executor);
         this.addChild(node);
         return node;
     }
 
-    public Node childExecutable(String name, CommandNodeExecutor executor, CommandNodeExecutor walked) {
+    public Node thenExecute(String name, CommandNodeExecutor executor, CommandNodeExecutor walked) {
         Node node = new Node(name, this, root);
-        node.makeExecutable(executor, walked);
+        node.executes(executor, walked);
         this.addChild(node);
         return node;
     }

@@ -34,7 +34,7 @@ public class CommandParseException extends CommandException {
 
     @Override
     public String getErrorName() {
-        return "command parse error";
+        return "Command Parsing";
     }
 
     @Override
@@ -55,9 +55,9 @@ public class CommandParseException extends CommandException {
 
         // append substrings
         String str = loc.getReader().getString();
-        String subPrefix = str.substring(Math.max(0, loc.getStartIndex() - 4), loc.getStartIndex());
+        String subPrefix = str.substring(Math.max(0, loc.getStartIndex() - 6), loc.getStartIndex());
         String sub       = str.substring(loc.getStartIndex(), loc.getEndIndex());
-        String subSuffix = str.substring(Math.min(str.length() - 1, loc.getEndIndex()), Math.min(str.length() - 1, loc.getEndIndex() + 4));
+        String subSuffix = str.substring(Math.min(str.length() - 1, loc.getEndIndex()), Math.min(str.length() - 1, loc.getEndIndex() + 6));
         b.append(ChatColor.GREEN).append(subPrefix);
         b.append(ChatColor.RED).append(ChatColor.UNDERLINE).append(sub);
         b.append(ChatColor.GREEN).append(subSuffix);

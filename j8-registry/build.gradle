@@ -1,11 +1,17 @@
 plugins {
-    id 'java' // java
+    // java
+    id 'java'
+    id 'java-library'
 
     // for shading in dependencies
     id "com.github.johnrengelman.shadow" version "7.1.2"
 
     // for minecraft
     id ("io.papermc.paperweight.userdev") version "1.3.5" apply false
+
+    // package publishing
+    id 'maven-publish'
+    id 'signing'
 }
 
 ext {
@@ -15,6 +21,9 @@ ext {
 
     // Testing
     hasTesting = true
+
+    // Artifact
+    desc = "Registry data storage."
 }
 
 // Properties

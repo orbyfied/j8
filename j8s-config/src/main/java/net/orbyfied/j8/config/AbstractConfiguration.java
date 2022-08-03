@@ -4,10 +4,10 @@ import org.bukkit.configuration.ConfigurationSection;
 
 /**
  * Abstract implementation of
- * {@link net.orbyfied.carbon.config.Configuration}
- * @see net.orbyfied.carbon.config.Configuration
+ * {@link Configuration}
+ * @see Configuration
  */
-public abstract class AbstractConfiguration implements net.orbyfied.carbon.config.Configuration {
+public abstract class AbstractConfiguration implements Configuration {
 
     /**
      * The configurable that this
@@ -21,7 +21,7 @@ public abstract class AbstractConfiguration implements net.orbyfied.carbon.confi
     }
 
     /**
-     * @see net.orbyfied.carbon.config.Configuration#getConfigurable()
+     * @see Configuration#getConfigurable()
      */
     @Override
     public Configurable<?> getConfigurable() {
@@ -32,12 +32,12 @@ public abstract class AbstractConfiguration implements net.orbyfied.carbon.confi
 
     @Override
     public final void save(ConfigurationSection config) {
-        net.orbyfied.carbon.config.Configuration.super.save(config);
+        Configuration.super.save(config);
     }
 
     @Override
     public final void load(ConfigurationSection config) {
-        net.orbyfied.carbon.config.Configuration.super.load(config);
+        Configuration.super.load(config);
     }
 
 }

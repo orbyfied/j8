@@ -1,8 +1,8 @@
 package net.orbyfied.j8.command.annotation;
 
 import net.orbyfied.j8.command.CommandEngine;
-import net.orbyfied.j8.command.CommandProperties;
-import net.orbyfied.j8.command.Executable;
+import net.orbyfied.j8.command.component.Properties;
+import net.orbyfied.j8.command.component.Executable;
 import net.orbyfied.j8.command.Node;
 import net.orbyfied.j8.command.exception.NodeExecutionException;
 import net.orbyfied.j8.registry.Identifier;
@@ -131,7 +131,7 @@ public class BaseAnnotationProcessor {
                         m.invoke(obj, args.toArray());
                     } catch (Throwable e) {
                         // throw node execution exception
-                        throw new NodeExecutionException(cmd.getRoot(), cmd, e);
+                        throw new NodeExecutionException(cmd.root(), cmd, e);
                     }
                 });
             }
@@ -144,16 +144,16 @@ public class BaseAnnotationProcessor {
 
     protected BaseAnnotationProcessor parseExecutableNodeProperties(Node node,
                                                                     AnnotatedElement element) {
-        // parse properties (CommandProperties)
+        // parse properties (Properties)
         CommandUsage commandUsage;
         if ((commandUsage = element.getAnnotation(CommandUsage.class)) != null)
-            node.component(CommandProperties.class, CommandProperties::new, (n1, cp) -> cp.usage(commandUsage.value()));
+            node.component(Properties.class, Properties::new, (n1, cp) -> cp.usage(commandUsage.value()));
         CommandDescription commandDescription;
         if ((commandDescription = element.getAnnotation(CommandDescription.class)) != null)
-            node.component(CommandProperties.class, CommandProperties::new, (n1, cp) -> cp.description(commandDescription.value()));
+            node.component(Properties.class, Properties::new, (n1, cp) -> cp.description(commandDescription.value()));
         CommandLabel commandLabel;
         if ((commandLabel = element.getAnnotation(CommandLabel.class)) != null)
-            node.component(CommandProperties.class, CommandProperties::new, (n1, cp) -> cp.label(commandLabel.value()));
+            node.component(Properties.class, Properties::new, (n1, cp) -> cp.label(commandLabel.value()));
 
         // return this
         return this;

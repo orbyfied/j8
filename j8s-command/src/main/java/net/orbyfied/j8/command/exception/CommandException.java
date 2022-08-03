@@ -45,8 +45,8 @@ public class CommandException extends RuntimeException {
         ChatColor c = ChatColor.RED;
         if (isWarning)
             c = ChatColor.GOLD;
-        return c + (isWarning ? "⚠" : ChatColor.BOLD + "×") + " " + getErrorName() +
-                (getCause() != null ? "(" + getCause().getClass().getSimpleName() + ")" : "")
+        return c + (isWarning ? "⚠" : ChatColor.BOLD + "✖") + " " + c + getErrorName() +
+                (getCause() != null ? " (" + getCause().getClass().getSimpleName() + ")" : "")
                 + ChatColor.DARK_GRAY + " in command(" + rootCommand.getName() + ")";
     }
 

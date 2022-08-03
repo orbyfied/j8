@@ -15,3 +15,8 @@
 /lib/
 /.test/
 /**/.test/
+
+# Security
+/secret-keys.gpg
+/gradle.properties
+/secrets.properties

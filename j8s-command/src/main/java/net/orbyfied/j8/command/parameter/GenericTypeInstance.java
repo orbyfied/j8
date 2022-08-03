@@ -15,7 +15,6 @@ public class GenericTypeInstance<B> implements ParameterType<B> {
 
         // set type parameter values
         int l = types.length;
-        System.out.println(base.getTypeParameters());
         if (l != base.getTypeParameters().size())
             throw new IllegalArgumentException("Invalid amount of type parameters.");
         List<String> paramNames = base.getTypeParameters();

@@ -1,6 +1,8 @@
 package net.orbyfied.j8.command;
 
 import net.md_5.bungee.api.ChatColor;
+import net.orbyfied.j8.command.component.Executable;
+import net.orbyfied.j8.command.exception.CommandHaltException;
 import net.orbyfied.j8.command.parameter.Flag;
 import net.orbyfied.j8.registry.Identifier;
 import net.orbyfied.j8.util.StringReader;
@@ -156,6 +158,33 @@ public class Context {
         return current;
     }
 
+    public Context halt(boolean success, String message) {
+        throw new CommandHaltException(rootCommand, message)
+                .setSuccessful(success);
+    }
+
+    public Context halt(boolean success, Throwable t) {
+        throw new CommandHaltException(rootCommand, t)
+                .setSuccessful(success);
+    }
+
+    public Context halt(boolean success, String message, Throwable t) {
+        throw new CommandHaltException(rootCommand, message, t)
+                .setSuccessful(success);
+    }
+
+    public Context fail(String message) {
+        return halt(false, message);
+    }
+
+    public Context fail(Throwable t) {
+        return halt(false, t);
+    }
+
+    public Context fail(String message, Throwable t) {
+        return halt(false, message, t);
+    }
+
     /* ----- Symbols ----- */
 
     public HashMap<Identifier, Object> getSymbols() {
@@ -272,9 +301,10 @@ public class Context {
     }
 
     @SuppressWarnings("unchecked")
-    public <T> T getFlagValue(String name) {
+    public <T> T getFlagValue(Flag<T> flag) {
+        if (flag == null)
+            return null;
         T res;
-        Flag<T> flag = (Flag<T>) flagsByName.get(name);
         if (!flagValues.containsKey(flag))
             res = flag.getDefault();
         else
@@ -283,8 +313,41 @@ public class Context {
     }
 
     @SuppressWarnings("unchecked")
+    public <T> T getFlagValue(String name) {
+        return (T) getFlagValue(flagsByName.get(name));
+    }
+
+    @SuppressWarnings("unchecked")
     public <T> T getFlagValue(String name, Class<T> tClass) {
         return (T) flagValues.get(flagsByName.get(name));
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T> T getFlagValue(Flag<?> flag, T ifUnset) {
+        if (flag == null)
+            return ifUnset;
+        if (!flagValues.containsKey(flag))
+            return ifUnset;
+        return (T) getFlagValue(flag);
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T> T getFlagValue(Flag<?> flag, Class<T> tClass, T ifUnset) {
+        if (flag == null)
+            return ifUnset;
+        if (!flagValues.containsKey(flag))
+            return ifUnset;
+        return (T) getFlagValue(flag);
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T> T getFlagValue(String name, Class<T> tClass, T ifUnset) {
+        Flag<?> flag = flagsByName.get(name);
+        if (flag == null)
+            return ifUnset;
+        if (!flagValues.containsKey(flag))
+            return ifUnset;
+        return (T) getFlagValue(flag);
     }
 
     ///////////////////////////////////

@@ -1,6 +1,8 @@
 package net.orbyfied.j8.command.annotation;
 
 import net.orbyfied.j8.command.*;
+import net.orbyfied.j8.command.component.Flags;
+import net.orbyfied.j8.command.component.Selecting;
 import net.orbyfied.j8.command.parameter.Flag;
 import net.orbyfied.j8.command.parameter.Parameter;
 import net.orbyfied.j8.command.parameter.ParameterType;
@@ -68,23 +70,34 @@ public class SubcommandParser {
             char c1;
 
             // parse executable (subcommand)
-            if ((c1 = reader.current()) != '[' && c1 != '<' && c1 != '-') {
+            if ((c1 = reader.current()) != '[' && c1 != '<' && c1 != '(') {
                 // collect name
                 String component = reader.collect(c -> c != ' ', 1);
 
                 // create and set node
                 current = current.getOrCreateSubnode(component,
-                        parent -> new Node(component, parent, parent.getRoot())
-                                .makeExecutable(null));
+                        parent -> new Node(component, parent, parent.root())
+                                .executes(null));
 
                 // store state
                 last = current;
-            } else if (c1 == '-') { // parse flag declaration
-                if (reader.peek(1) == '-')
-                    reader.next();
+            } else if (c1 == '(') { // parse flag declaration
+                // skip (
+                reader.next();
+                if (reader.current() == StringReader.DONE)
+                    throw new AnnotationProcessingException("Unexpected EOF while parsing flag @ idx: " + reader.index());
+
+                // parse type
+                TypeIdentifier tid = TypeIdentifier.of(reader.collect(c2 -> c2 != ' '));
+                ParameterType<?> type = engine.getTypeResolver().compile(tid);
+
+                if (reader.current() != ' ')
+                    throw new AnnotationProcessingException("Expected ' ' to continue to type declaration @ idx: " + reader.index());
+
+                reader.next();
 
                 // get name
-                String name = reader.collect(c -> c != '/' && c != '(');
+                String name = reader.collect(c -> c != '/' && c != ' ' && c != ')');
                 // get character
                 Character c = null;
                 if (reader.current() == '/') {
@@ -92,31 +105,27 @@ public class SubcommandParser {
                     reader.next();
                 }
 
-                if (reader.current() != '(')
-                    throw new AnnotationProcessingException("Expected '(' to open type and flag declaration");
-
-                // parse type
-                reader.next();
-                TypeIdentifier tid = TypeIdentifier.of(reader.collect(c2 -> c2 != ' ' && c2 != ')'));
-                ParameterType<?> type = engine.getTypeResolver().compile(tid);
-
                 // parse if switch
                 boolean isSwitch = false;
-                while (reader.current() == ' ') {
-                    switch (reader.next()) {
-                        case 's' -> isSwitch = true;
+                if (reader.current() == ' ') {
+                    if (reader.next() == '/') {
+                        isSwitch = true;
+                        reader.next();
                     }
-                    reader.next();
                 }
 
                 // close
                 if (reader.current() != ')')
-                    throw new AnnotationProcessingException("Expected ')' to close type and flag declaration");
+                    throw new AnnotationProcessingException("Expected ')' to close type and flag declaration @ idx: " + reader.index());
 
                 // create and add flag
-                Executable sel = last.getComponent(Executable.class);
-                Flag<?> flag = new Flag<>(sel, name, c, type, isSwitch);
-                sel.getFlags().add(flag);
+                Flags flags = last.component(Flags.class, Flags::new);
+                Flag<?> flag = new Flag<>(flags, name, c, type, isSwitch);
+                flags.addFlag(flag);
+
+
+                // go to next character
+                reader.next();
             } else { // parse parameter
                 // check if it is required
                 boolean isReq = reader.current() == '<';
@@ -143,8 +152,8 @@ public class SubcommandParser {
 
                     // create node
                     paramNode = current.getOrCreateSubnode(name,
-                            parent -> new Node(name, parent, parent.getRoot())
-                                    .makeParameter(pt).getComponent(Parameter.class)
+                            parent -> new Node(name, parent, parent.root())
+                                    .parameter(pt).getComponent(Parameter.class)
                                     .setIdentifier(pid)
                                     .getNode());
                 }
@@ -159,7 +168,9 @@ public class SubcommandParser {
 
         // make sure to always set executable
         if (current.getComponentOf(Selecting.class) == null)
-            current.makeExecutable(null);
+            current.executes(null);
+        if (last.getComponentOf(Selecting.class) == null)
+            last.executes(null);
 
         // return
         return last;

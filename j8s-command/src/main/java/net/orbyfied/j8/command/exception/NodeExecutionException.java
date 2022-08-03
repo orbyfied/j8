@@ -33,7 +33,7 @@ public class NodeExecutionException extends CommandExecutionException {
 
     @Override
     public String getErrorName() {
-        return "node execution error";
+        return "Node Execution";
     }
 
 }

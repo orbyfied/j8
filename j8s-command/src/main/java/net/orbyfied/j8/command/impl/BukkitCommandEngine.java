@@ -1,6 +1,7 @@
 package net.orbyfied.j8.command.impl;
 
 import net.orbyfied.j8.command.*;
+import net.orbyfied.j8.command.component.Properties;
 import net.orbyfied.j8.command.minecraft.MinecraftParameterType;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -63,17 +64,14 @@ public class BukkitCommandEngine extends CommandEngine {
     private static SuggestionAccumulator createSuggestionAccumulator(List<String> list) {
         return new SuggestionAccumulator() {
             @Override
-            public SuggestionAccumulator suggest(Object o) {
-                if (o != null)
-                    list.add(o.toString());
-                return this;
+            public void suggest0(String s) {
+                list.add(s);
             }
 
             @Override
-            public SuggestionAccumulator unsuggest(Object o) {
+            public void unsuggest0(String o) {
                 if (o != null)
-                    list.remove(o.toString());
-                return null;
+                    list.remove(o);
             }
         };
     }
@@ -96,7 +94,7 @@ public class BukkitCommandEngine extends CommandEngine {
             this.node   = node;
 
             // set properties
-            CommandProperties rcp = node.getComponentOf(CommandProperties.class);
+            Properties rcp = node.getComponentOf(Properties.class);
             if (rcp != null) {
                 if (rcp.description() != null)
                     this.setDescription(rcp.description());
@@ -111,6 +109,8 @@ public class BukkitCommandEngine extends CommandEngine {
         public boolean execute(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args) {
             String str = stitchArgs(alias, args);
             Context ctx = engine.dispatch(sender, str, null, null);
+            if (ctx.intermediateText() != null && !ctx.intermediateText().isBlank())
+                sender.sendMessage(ctx.intermediateText());
             return ctx.successful();
         }
 

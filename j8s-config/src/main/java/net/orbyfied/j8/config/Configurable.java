@@ -6,7 +6,7 @@ import java.util.function.Function;
  * Represents a component that can
  * be configured using a configuration.
  */
-public interface Configurable<C extends net.orbyfied.carbon.config.Configuration> {
+public interface Configurable<C extends Configuration> {
 
     /**
      * Get the configuration path from
@@ -23,7 +23,7 @@ public interface Configurable<C extends net.orbyfied.carbon.config.Configuration
 
     ////////////////////////////////////////
 
-    static <C extends net.orbyfied.carbon.config.Configuration> Configurable<C> of(String path, Function<Configurable<C>, C> config) {
+    static <C extends Configuration> Configurable<C> of(String path, Function<Configurable<C>, C> config) {
         return new Configurable<>() {
             final C it = config.apply(this);
 

@@ -29,7 +29,7 @@ public class NodeParseException extends CommandParseException {
 
     @Override
     public String getErrorName() {
-        return "node parse error";
+        return "Node Parsing";
     }
 
     @Override

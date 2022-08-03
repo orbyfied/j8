@@ -1,6 +1,9 @@
 package net.orbyfied.j8.command.parameter;
 
 import net.orbyfied.j8.command.*;
+import net.orbyfied.j8.command.component.Completable;
+import net.orbyfied.j8.command.component.Functional;
+import net.orbyfied.j8.command.component.Selecting;
 import net.orbyfied.j8.command.exception.NodeParseException;
 import net.orbyfied.j8.registry.Identifier;
 import net.orbyfied.j8.util.StringReader;
@@ -11,7 +14,7 @@ import java.util.function.Supplier;
 
 public class Parameter
         extends AbstractNodeComponent
-        implements Functional, Selecting, Completer {
+        implements Functional, Selecting, Completable {
 
     protected Identifier identifier;
 
@@ -81,7 +84,7 @@ public class Parameter
 
             int endIndex = reader.index();
             throw new NodeParseException(
-                    node.getRoot(),
+                    node.root(),
                     node,
                     new ErrorLocation(reader, startIndex, endIndex),
                     e

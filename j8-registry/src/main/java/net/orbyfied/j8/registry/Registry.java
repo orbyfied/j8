@@ -25,7 +25,7 @@ import java.util.function.Supplier;
  * But most importantly, it allows for the addition of
  * mapping and listing modules and services to add functionality.
  * @param <T> The type of registry item.
- *            Restricted to <? extends Identifiable>
+ *            Restricted to ? extends Identifiable
  */
 public class Registry<T extends Identifiable>
         implements Identifiable, Iterable<T>,

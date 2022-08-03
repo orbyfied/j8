@@ -1,11 +1,17 @@
 plugins {
-    id 'java' // java
+    // java
+    id 'java'
+    id 'java-library'
+
+    // for minecraft
+    id ("io.papermc.paperweight.userdev") version "1.3.5" apply false
 
     // for shading in dependencies
     id "com.github.johnrengelman.shadow" version "7.1.2"
 
-    // for minecraft
-    id ("io.papermc.paperweight.userdev") version "1.3.5" apply false
+    // package publishing
+    id 'maven-publish'
+    id 'signing'
 }
 
 ext {
@@ -15,10 +21,13 @@ ext {
 
     // Testing
     hasTesting = false
+
+    // Artifact
+    desc = "Bukkit/Spigot command framework."
 }
 
 // Properties
-version '0.1.0'
+version '0.1.1'
 
 apply from: '../buildSrc/j8-module.gradle', to: project
 

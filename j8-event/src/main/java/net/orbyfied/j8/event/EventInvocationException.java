@@ -1,6 +1,6 @@
 package net.orbyfied.j8.event;
 
-public class EventInvocationException extends net.orbyfied.j8.event.exception.EventException {
+public class EventInvocationException extends EventException {
 
     public EventInvocationException(EventBus bus, String message) {
         super(bus, message);

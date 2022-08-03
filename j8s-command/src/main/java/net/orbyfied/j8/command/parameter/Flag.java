@@ -1,13 +1,13 @@
 package net.orbyfied.j8.command.parameter;
 
-import net.orbyfied.j8.command.Selecting;
+import net.orbyfied.j8.command.component.Flags;
 
 public class Flag<T> {
 
     /**
      * The owner of a flag.
      */
-    final Selecting owner;
+    final Flags owner;
 
     /**
      * The full name of this flag.
@@ -36,7 +36,7 @@ public class Flag<T> {
     boolean isSwitch;
 
     public Flag(
-            Selecting owner,
+            Flags owner,
             String name,
             Character ch,
             ParameterType<T> type,
@@ -51,7 +51,7 @@ public class Flag<T> {
         this.isSwitch    = isSwitch;
     }
 
-    public Selecting getOwner() {
+    public Flags getOwner() {
         return owner;
     }
 

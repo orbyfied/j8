@@ -1,14 +1,16 @@
 package net.orbyfied.j8.command;
 
-import net.orbyfied.j8.command.exception.CommandException;
-import net.orbyfied.j8.command.exception.CommandParseException;
-import net.orbyfied.j8.command.exception.NodeExecutionException;
+import net.orbyfied.j8.command.component.Executable;
+import net.orbyfied.j8.command.component.Selecting;
+import net.orbyfied.j8.command.component.Suggester;
+import net.orbyfied.j8.command.exception.*;
 import net.orbyfied.j8.command.impl.DelegatingNamespacedTypeResolver;
 import net.orbyfied.j8.command.impl.SystemParameterType;
 import net.orbyfied.j8.command.parameter.Flag;
 import net.orbyfied.j8.command.parameter.Parameter;
 import net.orbyfied.j8.command.parameter.TypeResolver;
 import net.orbyfied.j8.util.StringReader;
+import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 
 import java.util.ArrayList;
@@ -89,7 +91,6 @@ public abstract class CommandEngine {
      * Should do whatever it needs to do when
      * a node gets unregistered to make it work.
      * @param root The command node.
-     * @implNote Optional. Unregistration won't be used much.
      */
     protected abstract void unregisterPlatform(Node root);
 
@@ -118,9 +119,9 @@ public abstract class CommandEngine {
      * @return The context for optional further use.
      */
     public Context dispatch(CommandSender sender,
-                                                        String str,
-                                                        SuggestionAccumulator suggestions,
-                                                        Consumer<Context> ctxConsumer) {
+                            String str,
+                            SuggestionAccumulator suggestions,
+                            Consumer<Context> ctxConsumer) {
 
         // get mode (execute or suggest)
         boolean isSuggesting    = suggestions != null;
@@ -161,6 +162,10 @@ public abstract class CommandEngine {
                 context.current = current;
                 context.currentExecutable = lastExecutable;
 
+                // call walked
+                if (mainc != null)
+                    mainc.getNode().processWalked(context, reader);
+
                 // is executable
                 if (mainc instanceof Executable exec) {
                     lastExecutable = exec;
@@ -169,9 +174,9 @@ public abstract class CommandEngine {
                         exec.walked(context, reader);
                     } catch (Exception e) {
                         // dont create a massive chain of exceptions
-                        if (e instanceof NodeExecutionException nex) {
+                        if (e instanceof CommandException) {
                             // throw the exception itself
-                            throw nex;
+                            throw (RuntimeException)e;
                         } else {
                             // throw the execution exception
                             throw new NodeExecutionException(root, current, e);
@@ -192,7 +197,8 @@ public abstract class CommandEngine {
                     if (reader.next(2) == '-') {
                         // parse flag name
                         // and get flag
-                        String flagName = reader.collect(c -> c != '=');
+                        reader.next();
+                        String flagName = reader.collect(c -> c != '=' && c != ' ');
                         Flag<?> flag    = context.flagsByName.get(flagName);
                         if (flag == null) {
                             if (!isSuggesting) { // throw error if flag was not found
@@ -201,30 +207,38 @@ public abstract class CommandEngine {
                                         "Flag --" + flagName + " was not found.");
                             } else {
                                 for (Flag<?> f : context.flags)
-                                    suggestions.suggest(f.getName());
-                                continue;
+                                    if (f.isSwitch())
+                                        suggestions.suggest("--" + f.getName());
+                                    else
+                                        suggestions.suggest("--" + f.getName() + "=");
+                                reader.collect(c -> c != ' ');
                             }
-                        }
-
-                        // parse value or switch
-                        if (reader.current() == '=') {
-                            // parse value
-                            reader.next();
-                            if (!isSuggesting) {
-                                Object val = flag.getType().parse(context, reader);
-
-                                // set flag
-                                context.flagValues.put(flag, val);
-                            } else flag.getType().suggest(context, suggestions);
                         } else {
-                            // check switch
-                            if (!flag.isSwitch())
-                                throw new CommandParseException(root,
-                                        new ErrorLocation(reader, sidx + 1, reader.index()),
-                                        "Flag --" + flagName + " is not a switch, but no value was provided.");
+                            // parse value or switch
+                            if (reader.current() == '=') {
+                                // parse value
+                                reader.next();
+                                if (!isSuggesting) {
+                                    Object val = flag.getType().parse(context, reader);
 
-                            // parse switch
-                            context.flagValues.put(flag, true);
+                                    // set flag
+                                    context.flagValues.put(flag, val);
+                                } else {
+                                    // suggest values from type
+                                    suggestions.pushPrefix("--" + flagName + "=");
+                                    flag.getType().suggest(context, suggestions);
+                                    suggestions.popPrefix();
+                                }
+                            } else {
+                                // check switch
+                                if (!flag.isSwitch())
+                                    throw new CommandParseException(root,
+                                            new ErrorLocation(reader, sidx + 1, reader.index()),
+                                            "Flag --" + flagName + " is not a switch, but no value was provided.");
+
+                                // parse switch
+                                context.flagValues.put(flag, true);
+                            }
                         }
                     } else {
                         // get the characters in the specifier
@@ -250,7 +264,7 @@ public abstract class CommandEngine {
                             }
                         } else {
                             for (Map.Entry<Character, Flag<?>> entry : context.flagsByChar.entrySet())
-                                suggestions.suggest(entry.getKey());
+                                suggestions.suggest("-" + entry.getKey());
                         }
                     }
 
@@ -264,13 +278,22 @@ public abstract class CommandEngine {
                 // skip to next character
                 reader.next();
 
+                // error handling
+                int idx = reader.index();
+                char cb = reader.current();
+
                 // get main functional component
                 // and set current to new node
-                mainc = current.getSubnode(context, reader);
+                mainc = current.getNextSubnode(context, reader);
+
+                // unknown subcommand
+                if (!isSuggesting && mainc == null && cb != StringReader.DONE) {
+                    throw new NodeParseException(root, current, new ErrorLocation(reader, idx - 1, reader.index()),
+                            "Unknown subcommand.");
+                }
 
                 // break if we ended
-                if (reader.current() == StringReader.DONE ||
-                        mainc == null) {
+                if (reader.current() == StringReader.DONE || mainc == null) {
                     current = null;
                     break;
                 }
@@ -292,13 +315,16 @@ public abstract class CommandEngine {
             // execute
             if (lastExecutable != null && !isSuggesting && context.successful()) {
                 try {
+                    // call execute on the node
+                    lastExecutable.getNode().processExecute(context);
+
                     // execute final command
                     lastExecutable.execute(context);
                 } catch (Exception e) {
                     // dont create a massive chain of exceptions
-                    if (e instanceof NodeExecutionException nex) {
+                    if (e instanceof CommandException) {
                         // throw the exception itself
-                        throw nex;
+                        throw (RuntimeException)e;
                     } else {
                         // throw the execution exception
                         throw new NodeExecutionException(root, lastExecutable.node, e);
@@ -307,13 +333,39 @@ public abstract class CommandEngine {
             }
 
         } catch (CommandException e) {
-            // print stack trace if severe enough
-            if (e.isSevere())
-                e.printStackTrace();
+            if (e instanceof CommandHaltException ec) {
+                boolean success = ec.isSuccessful();
 
-            // communicate with sender
-            context.intermediateText(e.getFormattedString());
-            context.successful(false); // fail
+                // create intermediate text message
+                // if we have a message or cause to
+                // show to the player
+                if (ec.getMessage() != null || ec.getCause() != null) {
+                    // create intermediate text
+                    StringBuilder b = new StringBuilder();
+                    if (success)
+                        b.append(ChatColor.GREEN + "" + ChatColor.BOLD + "✔ " + ChatColor.GREEN);
+                    else
+                        b.append(ChatColor.RED + "" + ChatColor.BOLD + "✖ " + ChatColor.RED);
+                    if (ec.getMessage() != null)
+                        b.append(ec.getMessage());
+                    if (ec.getCause() != null)
+                        b.append(ChatColor.DARK_GRAY).append(" (").append(ChatColor.RED)
+                                .append(ec.getCause()).append(ChatColor.DARK_GRAY).append(")");
+
+                    context.intermediateText(b.toString());
+                }
+
+                // set success
+                context.successful(success);
+            } else {
+                // print stack trace if severe enough
+                if (e.isSevere())
+                    e.printStackTrace();
+
+                // communicate with sender
+                context.intermediateText(e.getFormattedString());
+                context.successful(false); // fail
+            }
         }
 
         // return

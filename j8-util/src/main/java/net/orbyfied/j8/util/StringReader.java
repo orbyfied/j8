@@ -150,7 +150,13 @@ public class StringReader {
 
     public StringReader subForward(int from, int len) {
         StringReader reader = new StringReader(str, from);
-        reader.len = from + len;
+        reader.len = Math.min(from + len, this.len - from);
+        return reader;
+    }
+
+    public StringReader subFrom(int from, int len) {
+        StringReader reader = new StringReader(str, index + from);
+        reader.len = Math.min(from + len, this.len - from - index);
         return reader;
     }
 

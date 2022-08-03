@@ -1,6 +1,9 @@
-package net.orbyfied.j8.command;
+package net.orbyfied.j8.command.component;
 
-public class CommandProperties extends AbstractNodeComponent {
+import net.orbyfied.j8.command.AbstractNodeComponent;
+import net.orbyfied.j8.command.Node;
+
+public class Properties extends AbstractNodeComponent {
 
     protected String description;
 
@@ -8,7 +11,7 @@ public class CommandProperties extends AbstractNodeComponent {
 
     protected String usage;
 
-    public CommandProperties(Node node) {
+    public Properties(Node node) {
         super(node);
     }
 
@@ -16,7 +19,7 @@ public class CommandProperties extends AbstractNodeComponent {
         return description;
     }
 
-    public CommandProperties description(String str) {
+    public Properties description(String str) {
         this.description = str;
         return this;
     }
@@ -25,7 +28,7 @@ public class CommandProperties extends AbstractNodeComponent {
         return label;
     }
 
-    public CommandProperties label(String str) {
+    public Properties label(String str) {
         this.label = str;
         return this;
     }
@@ -34,7 +37,7 @@ public class CommandProperties extends AbstractNodeComponent {
         return usage;
     }
 
-    public CommandProperties usage(String str) {
+    public Properties usage(String str) {
         this.usage = str;
         return this;
     }

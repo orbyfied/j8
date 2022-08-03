@@ -1,0 +1,4 @@
+name: J8TestPlugin
+main: net.orbyfied.j8tp.J8TestPlugin
+version: 0.1.0
+api-version: 1.18

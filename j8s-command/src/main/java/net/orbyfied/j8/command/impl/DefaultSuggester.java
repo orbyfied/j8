@@ -1,6 +1,8 @@
 package net.orbyfied.j8.command.impl;
 
 import net.orbyfied.j8.command.*;
+import net.orbyfied.j8.command.component.Completable;
+import net.orbyfied.j8.command.component.Suggester;
 import net.orbyfied.j8.util.StringReader;
 
 public class DefaultSuggester
@@ -17,10 +19,15 @@ public class DefaultSuggester
                             StringReader reader,
                             Node next) {
         if (next == null) {
-            for (Node c : node.getChildren())
-                c.getComponentOf(Completer.class).completeSelf(ctx, node, builder);
+            for (Node c : node.getChildren()) {
+                Completable comp = c.getComponentOf(Completable.class);
+                if (comp != null)
+                    comp.completeSelf(ctx, node, builder);
+            }
         } else {
-            next.getComponentOf(Completer.class).completeSelf(ctx, next, builder);
+            Completable comp = next.getComponentOf(Completable.class);
+            if (comp != null)
+                comp.completeSelf(ctx, next, builder);
         }
     }
 

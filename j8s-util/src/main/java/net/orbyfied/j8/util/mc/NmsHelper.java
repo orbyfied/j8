@@ -3,7 +3,7 @@ package net.orbyfied.j8.util.mc;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.chunk.LevelChunk;
-import net.orbyfied.carbon.util.ReflectionUtil;
+import net.orbyfied.j8.util.ReflectionUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.World;
@@ -12,8 +12,8 @@ import org.bukkit.entity.Player;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
 
-import static net.orbyfied.carbon.util.ReflectionUtil.getDeclaredFieldSafe;
-import static net.orbyfied.carbon.util.ReflectionUtil.queryFieldSafe;
+import static net.orbyfied.j8.util.ReflectionUtil.getDeclaredFieldSafe;
+import static net.orbyfied.j8.util.ReflectionUtil.queryFieldSafe;
 
 /**
  * Utilities for working with NMS.

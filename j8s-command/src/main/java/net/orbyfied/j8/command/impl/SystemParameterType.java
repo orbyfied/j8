@@ -1,7 +1,9 @@
 package net.orbyfied.j8.command.impl;
 
 import net.orbyfied.j8.command.Context;
+import net.orbyfied.j8.command.ErrorLocation;
 import net.orbyfied.j8.command.SuggestionAccumulator;
+import net.orbyfied.j8.command.exception.NodeParseException;
 import net.orbyfied.j8.command.parameter.GenericParameterType;
 import net.orbyfied.j8.command.parameter.ParameterType;
 import net.orbyfied.j8.command.parameter.TypeIdentifier;
@@ -12,6 +14,7 @@ import net.orbyfied.j8.util.functional.*;
 import net.orbyfied.j8.util.math.Vec3i;
 
 import java.nio.file.Path;
+import java.sql.Struct;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -27,6 +30,26 @@ import java.util.function.Function;
  * type lists and maps.
  */
 public class SystemParameterType {
+
+    @FunctionalInterface
+    interface Suggester {
+        void doSuggestions(Context ctx, StringReader reader, SuggestionAccumulator acc);
+    }
+
+    @FunctionalInterface
+    interface GenericSuggester extends Suggester {
+        @Override
+        default void doSuggestions(Context ctx, StringReader reader, SuggestionAccumulator acc) {
+            doSuggestions(ctx, reader, acc, new LinkedHashMap<>());
+        }
+
+        void doSuggestions(Context ctx,
+                           StringReader reader,
+                           SuggestionAccumulator acc,
+                           LinkedHashMap<String, ParameterType> params);
+    }
+
+    ////////////////////////////////////////////////
 
     /**
      * Class for safely resolving system types.
@@ -66,14 +89,14 @@ public class SystemParameterType {
         final TypeIdentifier bid = TypeIdentifier.of(baseId);
 
         // parse optionals
-        BiConsumer<Context, SuggestionAccumulator> suggester = null;
+        Suggester suggester = null;
 
         for (Object o : optional) {
-            if (o instanceof BiConsumer)
-                suggester = (BiConsumer<Context, SuggestionAccumulator>) o;
+            if (o instanceof Suggester)
+                suggester = (Suggester) o;
         }
 
-        final BiConsumer<Context, SuggestionAccumulator> finalSuggester = suggester;
+        final Suggester finalSuggester = suggester;
 
         // create type
         ParameterType<T> type = new ParameterType<>() {
@@ -105,7 +128,7 @@ public class SystemParameterType {
             @Override
             public void suggest(Context context, SuggestionAccumulator suggestions) {
                 if (finalSuggester != null)
-                    finalSuggester.accept(context, suggestions);
+                    finalSuggester.doSuggestions(context, context.reader(), suggestions);
             }
 
             @Override
@@ -140,14 +163,14 @@ public class SystemParameterType {
         final String[] params = paramsStr.split(" ");
 
         // parse optionals
-        TriConsumer<Context, SuggestionAccumulator, LinkedHashMap<String, ParameterType>> suggester = null;
+        GenericSuggester suggester = null;
 
         for (Object o : optional) {
-            if (o instanceof BiConsumer)
-                suggester = (TriConsumer<Context, SuggestionAccumulator, LinkedHashMap<String, ParameterType>>) o;
+            if (o instanceof GenericSuggester)
+                suggester = (GenericSuggester) o;
         }
 
-        final TriConsumer<Context, SuggestionAccumulator, LinkedHashMap<String, ParameterType>> finalSuggester = suggester;
+        final GenericSuggester finalSuggester = suggester;
 
         // create type
         GenericParameterType<T> type = new GenericParameterType<>(params) {
@@ -169,7 +192,7 @@ public class SystemParameterType {
             @Override
             public void suggest(Context context, SuggestionAccumulator suggestions, LinkedHashMap<String, ParameterType> types) {
                 if (finalSuggester != null)
-                    finalSuggester.accept(context, suggestions, types);
+                    finalSuggester.doSuggestions(context, context.reader(), suggestions, types);
             }
 
             @Override
@@ -202,15 +225,17 @@ public class SystemParameterType {
 
     /**
      * Parses a floating point number.
-     * @see SystemParameterType#parseNumber(StringReader, BiFunction)
+     * @see SystemParameterType#parseNumber(Context, StringReader, BiFunction)
+     * @param context The parsing context.
      * @param reader The string reader.
      * @param parser The number parser.
      * @param <T> The number type.
      * @return The number/value.
      */
-    private static <T extends Number> T parseNumberFloat(StringReader reader,
+    private static <T extends Number> T parseNumberFloat(Context context,
+                                                         StringReader reader,
                                                          Function<String, T> parser) {
-        return parseNumber(reader, (str, __) -> parser.apply(str));
+        return parseNumber(context, reader, (str, __) -> parser.apply(str));
     }
 
     /**
@@ -218,14 +243,18 @@ public class SystemParameterType {
      * number. For non-floating point numbers
      * the parser needs to be configured to
      * not accept any radix specifications.
+     * @param context The parsing context.
      * @param reader The string reader.
      * @param parser The number parser.
      * @param <T> The number type.
      * @return The number/value.
      */
-    private static <T extends Number> T parseNumber(StringReader reader,
+    private static <T extends Number> T parseNumber(Context context,
+                                                    StringReader reader,
                                                     BiFunction<String, Integer, T> parser) {
         reader.collect(c -> c == ' ');
+
+        int idx = reader.index();
 
         int radix = 10;
         if (reader.current() == '0') {
@@ -241,11 +270,38 @@ public class SystemParameterType {
         }
 
         final int rdx = radix;
+        String str = reader.collect(c -> isDigit(c, rdx), c -> c == '_');
 
-        return parser.apply(reader.collect(c -> isDigit(c, rdx), c -> c == '_'), radix);
+        try {
+            return parser.apply(str, radix);
+        } catch (NumberFormatException e) {
+            throw new NodeParseException(context.rootCommand(), context.currentNode(),
+                    new ErrorLocation(reader, idx, reader.index()), "NaN (radix " + radix + "): '" + str + "'");
+        }
     }
 
     public static final String KEY_PROVIDER_OPTION = "key_provider";
+
+    /**
+     * Base 10 number suggestions.
+     */
+    private static final Suggester BASE_10_SUGGESTER = ((ctx, reader, acc) -> {
+        String pre = reader.collect(c -> c != ' ');
+        for (int i = 0; i < 10; i++)
+            acc.suggest(pre + i);
+    });
+
+    /**
+     * Base 10 number suggestions.
+     */
+    private static final Suggester BASE_10F_SUGGESTER = ((ctx, reader, acc) -> {
+        String pre = reader.collect(c -> c != ' ');
+        String ext = "";
+        if (!pre.contains("."))
+            ext = ".";
+        for (int i = 0; i < 10; i++)
+            acc.suggest(pre + i + ext);
+    });
 
     /* ----------------------------------------------- */
 
@@ -276,8 +332,9 @@ public class SystemParameterType {
      */
     public static final ParameterType<Byte> BYTE = of(Byte.class, "system:byte",
             (context, reader) -> isDigit(reader.current(), 10),
-            (context, reader) -> parseNumber(reader, Byte::parseByte),
-            (context, builder, value) -> builder.append(value)
+            (context, reader) -> parseNumber(context, reader, Byte::parseByte),
+            (context, builder, value) -> builder.append(value),
+            BASE_10_SUGGESTER
     );
 
     /**
@@ -290,8 +347,9 @@ public class SystemParameterType {
      */
     public static final ParameterType<Short> SHORT = of(Short.class, "system:short",
             (context, reader) -> isDigit(reader.current(), 10),
-            (context, reader) -> parseNumber(reader, Short::parseShort),
-            (context, builder, value) -> builder.append(value)
+            (context, reader) -> parseNumber(context, reader, Short::parseShort),
+            (context, builder, value) -> builder.append(value),
+            BASE_10_SUGGESTER
     );
 
     /**
@@ -304,8 +362,9 @@ public class SystemParameterType {
      */
     public static final ParameterType<Integer> INT = of(Integer.class, "system:int",
             (context, reader) -> isDigit(reader.current(), 10),
-            (context, reader) -> parseNumber(reader, Integer::parseInt),
-            (context, builder, value) -> builder.append(value)
+            (context, reader) -> parseNumber(context, reader, Integer::parseInt),
+            (context, builder, value) -> builder.append(value),
+            BASE_10_SUGGESTER
     );
 
     /**
@@ -318,8 +377,9 @@ public class SystemParameterType {
      */
     public static final ParameterType<Long> LONG = of(Long.class, "system:long",
             (context, reader) -> isDigit(reader.current(), 10),
-            (context, reader) -> parseNumber(reader, Long::parseLong),
-            (context, builder, value) -> builder.append(value)
+            (context, reader) -> parseNumber(context, reader, Long::parseLong),
+            (context, builder, value) -> builder.append(value),
+            BASE_10_SUGGESTER
     );
 
     /**
@@ -327,8 +387,9 @@ public class SystemParameterType {
      */
     public static final ParameterType<Float> FLOAT = of(Float.class, "system:float",
             (context, reader) -> isDigit(reader.current(), 10),
-            (context, reader) -> parseNumberFloat(reader, Float::parseFloat),
-            (context, builder, value) -> builder.append(value)
+            (context, reader) -> parseNumberFloat(context, reader, Float::parseFloat),
+            (context, builder, value) -> builder.append(value),
+            BASE_10F_SUGGESTER
     );
 
     /**
@@ -336,8 +397,9 @@ public class SystemParameterType {
      */
     public static final ParameterType<Double> DOUBLE = of(Double.class, "system:double",
             (context, reader) -> isDigit(reader.current(), 10),
-            (context, reader) -> parseNumberFloat(reader, Double::parseDouble),
-            (context, builder, value) -> builder.append(value)
+            (context, reader) -> parseNumberFloat(context, reader, Double::parseDouble),
+            (context, builder, value) -> builder.append(value),
+            BASE_10F_SUGGESTER
     );
 
     /**
@@ -356,7 +418,18 @@ public class SystemParameterType {
                 }
                 return reader.collect(c -> c != ' ');
             }),
-            (context, builder, s) -> builder.append("\"").append(s).append("\"")
+            (context, builder, s) -> builder.append("\"").append(s).append("\""),
+            ((Suggester) (ctx, reader, acc) -> {
+                if (reader.current() == '"') {
+                    for (int i = 0; i < 100; i++)
+                        acc.suggest((char)i);
+
+                    reader.next();
+                    reader.collect(c -> c != '"', 1);
+                    return;
+                }
+                reader.collect(c -> c != ' ');
+            })
     );
 
     /**
@@ -477,13 +550,14 @@ public class SystemParameterType {
             }),
 
             /* suggester */
-            ((TriConsumer<Context, SuggestionAccumulator, LinkedHashMap<String, ParameterType>>)(context, suggestions, types) -> {
-                StringReader reader = context.reader();
+            ((GenericSuggester)(context, reader, suggestions, types) -> {
                 suggestions.suggest("]");
                 suggestions.suggest(",");
 
                 // just suggest a value
                 types.get("T").suggest(context, suggestions);
+
+                reader.collect(c -> c != ']', 1);
             })
     );
 
