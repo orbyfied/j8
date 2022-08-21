@@ -303,7 +303,7 @@ public class Node {
         return this;
     }
 
-    public Node parameter(ArgumentType<?> type) {
+    public Node argument(ArgumentType<?> type) {
         addComponent(new Argument(this)).setType(type);
         return this;
     }
@@ -332,18 +332,18 @@ public class Node {
         return this;
     }
 
-    public Node thenParameter(String name,
-                              ArgumentType<?> type) {
+    public Node thenArgument(String name,
+                             ArgumentType<?> type) {
         Node node = new Node(name, this, root);
-        node.parameter(type);
+        node.argument(type);
         this.addChild(node);
         return node;
     }
 
-    public Node thenParameter(String name,
-                              ArgumentType<?> type,
-                              BiConsumer<Node, Argument> consumer) {
-        Node node = thenParameter(name, type);
+    public Node thenArgument(String name,
+                             ArgumentType<?> type,
+                             BiConsumer<Node, Argument> consumer) {
+        Node node = thenArgument(name, type);
         if (consumer != null)
             consumer.accept(node, node.getComponent(Argument.class));
         return this;

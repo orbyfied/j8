@@ -52,8 +52,8 @@ public class J8TestPlugin extends JavaPlugin {
                 .flag("fb", 'b', ArgumentTypes.BOOLEAN, true)
                 .flag("fc", ArgumentTypes.DOUBLE)
                 .flag("fd", ArgumentTypes.LIST.instance(ArgumentTypes.VECTOR_3F))
-                .thenParameter("name", ArgumentTypes.STRING)
-                .thenParameter("num", ArgumentTypes.INT)
+                .thenArgument("name", ArgumentTypes.STRING)
+                .thenArgument("num", ArgumentTypes.INT)
                 .root();
 
         commandManager.register(helloCmd);

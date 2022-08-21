@@ -153,7 +153,7 @@ public class SubcommandParser {
                     // create node
                     paramNode = current.getOrCreateSubnode(name,
                             parent -> new Node(name, parent, parent.root())
-                                    .parameter(pt).getComponent(Argument.class)
+                                    .argument(pt).getComponent(Argument.class)
                                     .setIdentifier(pid)
                                     .getNode());
                 }
