@@ -1,9 +1,10 @@
-package net.orbyfied.j8.command.parameter;
+package net.orbyfied.j8.command.argument;
 
 import net.orbyfied.j8.command.*;
-import net.orbyfied.j8.command.component.Completable;
+import net.orbyfied.j8.command.component.Completer;
 import net.orbyfied.j8.command.component.Functional;
-import net.orbyfied.j8.command.component.Selecting;
+import net.orbyfied.j8.command.component.Primary;
+import net.orbyfied.j8.command.exception.ErrorLocation;
 import net.orbyfied.j8.command.exception.NodeParseException;
 import net.orbyfied.j8.registry.Identifier;
 import net.orbyfied.j8.util.StringReader;
@@ -12,34 +13,34 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
-public class Parameter
+public class Argument
         extends AbstractNodeComponent
-        implements Functional, Selecting, Completable {
+        implements Functional, Primary, Completer {
 
     protected Identifier identifier;
 
-    protected ParameterType<?> type;
+    protected ArgumentType<?> type;
 
     protected LinkedHashMap<String, Supplier<Object>> options = new LinkedHashMap<>();
 
-    public Parameter(Node node) {
+    public Argument(Node node) {
         super(node);
         Node parent = node;
-        while ((parent = parent.parent()).hasComponentOf(Parameter.class)) { }
+        while ((parent = parent.parent()).hasComponentOf(Argument.class)) { }
         identifier = new Identifier(parent.getName(), node.getName());
     }
 
-    public Parameter setOption(String id, Supplier<Object> supplier) {
+    public Argument setOption(String id, Supplier<Object> supplier) {
         options.put(id, supplier);
         return this;
     }
 
-    public Parameter setOption(String id, Object supplied) {
+    public Argument setOption(String id, Object supplied) {
         options.put(id, () -> supplied);
         return this;
     }
 
-    public Parameter setIdentifier(Identifier id) {
+    public Argument setIdentifier(Identifier id) {
         this.identifier = id;
         return this;
     }
@@ -48,12 +49,12 @@ public class Parameter
         return identifier;
     }
 
-    public Parameter setType(ParameterType<?> type) {
+    public Argument setType(ArgumentType<?> type) {
         this.type = type;
         return this;
     }
 
-    public ParameterType<?> getType() {
+    public ArgumentType<?> getType() {
         return type;
     }
 
@@ -69,19 +70,25 @@ public class Parameter
 
     @Override
     public void walked(Context ctx, StringReader reader) {
+        // error location
         int startIndex = reader.index();
+        // value
         Object v;
 
+        // add options
         putOptions(ctx);
 
         try {
             // parse value
             v = type.parse(ctx, reader);
         } catch (Exception e) {
+
+            // don't create error chain
             if (e instanceof NodeParseException) {
                 throw e;
             }
 
+            // throw error
             int endIndex = reader.index();
             throw new NodeParseException(
                     node.root(),
@@ -92,9 +99,11 @@ public class Parameter
 
         }
 
+        // remove options
         remOptions(ctx);
 
-        ctx.setSymbol(identifier, v);
+        // set value
+        ctx.setArgument(identifier, v);
     }
 
     @Override
@@ -109,7 +118,7 @@ public class Parameter
     }
 
     @Override
-    public void completeSelf(Context context, Node from, SuggestionAccumulator suggestions) {
+    public void complete(Context context, SuggestionAccumulator suggestions, StringReader reader) {
         putOptions(context);
         type.suggest(context, suggestions);
         remOptions(context);

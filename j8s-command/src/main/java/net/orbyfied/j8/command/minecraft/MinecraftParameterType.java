@@ -2,9 +2,9 @@ package net.orbyfied.j8.command.minecraft;
 
 import net.orbyfied.j8.command.Context;
 import net.orbyfied.j8.command.SuggestionAccumulator;
-import net.orbyfied.j8.command.parameter.ParameterType;
-import net.orbyfied.j8.command.parameter.TypeIdentifier;
-import net.orbyfied.j8.command.parameter.TypeResolver;
+import net.orbyfied.j8.command.argument.ArgumentType;
+import net.orbyfied.j8.command.argument.TypeIdentifier;
+import net.orbyfied.j8.command.argument.TypeResolver;
 import net.orbyfied.j8.registry.Identifier;
 import net.orbyfied.j8.util.StringReader;
 import net.orbyfied.j8.util.functional.TriConsumer;
@@ -21,10 +21,10 @@ public class MinecraftParameterType {
 
     public static final class MinecraftTypeResolver implements TypeResolver {
 
-        protected HashMap<String, ParameterType<?>> types = new HashMap<>();
+        protected HashMap<String, ArgumentType<?>> types = new HashMap<>();
 
         @Override
-        public ParameterType<?> resolve(Identifier identifier) {
+        public ArgumentType<?> resolve(Identifier identifier) {
             return types.get(identifier.getPath());
         }
 
@@ -41,19 +41,19 @@ public class MinecraftParameterType {
     /**
      * Function to quickly create simple
      * parameter types with lambdas.
-     * @see ParameterType
+     * @see ArgumentType
      */
-    static <T> ParameterType<T> of(final Class<T> klass,
-                                   final String baseId,
-                                   final BiPredicate<Context, StringReader> acceptor,
-                                   final BiFunction<Context, StringReader, T> parser,
-                                   final TriConsumer<Context, StringBuilder, T> writer,
-                                   final BiConsumer<Context, SuggestionAccumulator> suggester) {
+    static <T> ArgumentType<T> of(final Class<T> klass,
+                                  final String baseId,
+                                  final BiPredicate<Context, StringReader> acceptor,
+                                  final BiFunction<Context, StringReader, T> parser,
+                                  final TriConsumer<Context, StringBuilder, T> writer,
+                                  final BiConsumer<Context, SuggestionAccumulator> suggester) {
         // parse identifier
         final TypeIdentifier bid = TypeIdentifier.of(baseId);
 
         // create type
-        ParameterType<T> type = new ParameterType<>() {
+        ArgumentType<T> type = new ArgumentType<>() {
             @Override
             public TypeIdentifier getBaseIdentifier() {
                 return bid;
@@ -99,7 +99,7 @@ public class MinecraftParameterType {
 
     //////////////////////////////////////////////
 
-    public static final ParameterType<Player> ONLINE_PLAYER_DIRECT = of(Player.class, "minecraft:online_player_direct",
+    public static final ArgumentType<Player> ONLINE_PLAYER_DIRECT = of(Player.class, "minecraft:online_player_direct",
             (context, reader) -> true,
             ((context, reader) -> {
                 String s = reader.collect(c -> c != ' ');

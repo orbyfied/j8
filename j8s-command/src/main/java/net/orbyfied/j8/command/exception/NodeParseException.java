@@ -1,7 +1,6 @@
 package net.orbyfied.j8.command.exception;
 
 import net.md_5.bungee.api.ChatColor;
-import net.orbyfied.j8.command.ErrorLocation;
 import net.orbyfied.j8.command.Node;
 
 public class NodeParseException extends CommandParseException {

@@ -47,7 +47,7 @@ public class CommandException extends RuntimeException {
             c = ChatColor.GOLD;
         return c + (isWarning ? "⚠" : ChatColor.BOLD + "✖") + " " + c + getErrorName() +
                 (getCause() != null ? " (" + getCause().getClass().getSimpleName() + ")" : "")
-                + ChatColor.DARK_GRAY + " in command(" + rootCommand.getName() + ")";
+                + ChatColor.DARK_GRAY + " " + rootCommand.getName() + "";
     }
 
     public String getFormattedSuffix() {

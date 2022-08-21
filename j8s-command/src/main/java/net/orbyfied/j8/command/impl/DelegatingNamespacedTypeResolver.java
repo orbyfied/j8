@@ -1,23 +1,81 @@
 package net.orbyfied.j8.command.impl;
 
-import net.orbyfied.j8.command.parameter.ParameterType;
-import net.orbyfied.j8.command.parameter.TypeResolver;
+import net.orbyfied.j8.command.argument.ArgumentType;
+import net.orbyfied.j8.command.argument.TypeResolver;
 import net.orbyfied.j8.registry.Identifier;
 
 import java.util.HashMap;
 
 public class DelegatingNamespacedTypeResolver implements TypeResolver {
 
-    TypeResolver miscDelegate;
-    HashMap<String, TypeResolver> namespaces = new HashMap<>();
+    /**
+     * The delegate if no type could be found in either
+     * the namespaced type resolver (if present), or the
+     * flat map.
+     */
+    TypeResolver delegate;
 
-    public DelegatingNamespacedTypeResolver delegate(TypeResolver miscDelegate) {
-        this.miscDelegate = miscDelegate;
+    /**
+     * The namespaced resolver map.
+     */
+    final HashMap<String, TypeResolver> namespaces = new HashMap<>();
+
+    /**
+     * The flat type map, to simply register and resolve
+     * types from a specific identifier.
+     */
+    final HashMap<Identifier, ArgumentType<?>> flat = new HashMap<>();
+
+    /**
+     * Set the type resolver to delegate to.
+     * @param delegate The delegate to set.
+     * @return This.
+     */
+    public DelegatingNamespacedTypeResolver delegate(TypeResolver delegate) {
+        this.delegate = delegate;
         return this;
     }
 
+    /**
+     * Get the delegate type resolver.
+     * @return That.
+     */
     public TypeResolver delegate() {
-        return miscDelegate;
+        return delegate;
+    }
+
+    /**
+     * Register a flat ID to type mapping.
+     * @param id The identifier. (key)
+     * @param type The type. (value)
+     * @return This.
+     */
+    public DelegatingNamespacedTypeResolver flat(Identifier id, ArgumentType<?> type) {
+        this.flat.put(id, type);
+        return this;
+    }
+
+    /**
+     * @see DelegatingNamespacedTypeResolver#flat(Identifier, ArgumentType)
+     */
+    public DelegatingNamespacedTypeResolver flat(String id, ArgumentType<?> type) {
+        return flat(Identifier.of(id), type);
+    }
+
+    /**
+     * Get a type from the flat ID to type map.
+     * @param id The identifier.
+     * @return The type or null if absent.
+     */
+    public ArgumentType<?> flat(Identifier id) {
+        return flat.get(id);
+    }
+
+    /**
+     * @see DelegatingNamespacedTypeResolver#flat(Identifier)
+     */
+    public ArgumentType<?> flat(String id) {
+        return flat(Identifier.of(id));
     }
 
     public DelegatingNamespacedTypeResolver namespace(String name, TypeResolver resolver) {
@@ -35,15 +93,18 @@ public class DelegatingNamespacedTypeResolver implements TypeResolver {
     }
 
     @Override
-    public ParameterType<?> resolve(Identifier identifier) {
+    public ArgumentType<?> resolve(Identifier identifier) {
         if (identifier.getNamespace() == null || identifier.getNamespace().isEmpty())
             identifier = new Identifier("system", identifier.getPath());
+        ArgumentType<?> type = null;
         TypeResolver namespacedResolver = namespaces.get(identifier.getNamespace());
         if (namespacedResolver != null)
-            return namespacedResolver.resolve(identifier);
-        if (miscDelegate != null)
-            return miscDelegate.resolve(identifier);
-        return null;
+            type = namespacedResolver.resolve(identifier);
+        if (type == null)
+            type = flat.get(identifier);
+        if (type == null && delegate != null)
+            type = delegate.resolve(identifier);
+        return type;
     }
 
 }

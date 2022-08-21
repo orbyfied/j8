@@ -1,20 +1,15 @@
-package net.orbyfied.j8.command.impl;
+package net.orbyfied.j8.command.argument;
 
 import net.orbyfied.j8.command.Context;
-import net.orbyfied.j8.command.ErrorLocation;
+import net.orbyfied.j8.command.exception.ErrorLocation;
 import net.orbyfied.j8.command.SuggestionAccumulator;
 import net.orbyfied.j8.command.exception.NodeParseException;
-import net.orbyfied.j8.command.parameter.GenericParameterType;
-import net.orbyfied.j8.command.parameter.ParameterType;
-import net.orbyfied.j8.command.parameter.TypeIdentifier;
-import net.orbyfied.j8.command.parameter.TypeResolver;
 import net.orbyfied.j8.registry.Identifier;
 import net.orbyfied.j8.util.StringReader;
 import net.orbyfied.j8.util.functional.*;
-import net.orbyfied.j8.util.math.Vec3i;
+import org.bukkit.util.Vector;
 
 import java.nio.file.Path;
-import java.sql.Struct;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -29,24 +24,17 @@ import java.util.function.Function;
  * Also contains methods for creating variable
  * type lists and maps.
  */
-public class SystemParameterType {
+public class ArgumentTypes {
 
-    @FunctionalInterface
-    interface Suggester {
+    interface CompleterFunc {
         void doSuggestions(Context ctx, StringReader reader, SuggestionAccumulator acc);
     }
 
-    @FunctionalInterface
-    interface GenericSuggester extends Suggester {
-        @Override
-        default void doSuggestions(Context ctx, StringReader reader, SuggestionAccumulator acc) {
-            doSuggestions(ctx, reader, acc, new LinkedHashMap<>());
-        }
-
+    interface GenericCompleterFunc {
         void doSuggestions(Context ctx,
                            StringReader reader,
                            SuggestionAccumulator acc,
-                           LinkedHashMap<String, ParameterType> params);
+                           LinkedHashMap<String, ArgumentType> params);
     }
 
     ////////////////////////////////////////////////
@@ -56,17 +44,17 @@ public class SystemParameterType {
      */
     public static final class SystemTypeResolver implements TypeResolver {
 
-        protected HashMap<String, ParameterType<?>> types = new HashMap<>();
+        protected HashMap<String, ArgumentType<?>> types = new HashMap<>();
 
         @Override
-        public ParameterType<?> resolve(Identifier identifier) {
+        public ArgumentType<?> resolve(Identifier identifier) {
             return types.get(identifier.getPath());
         }
 
     }
 
     /** UTILITY CLASS */
-    private SystemParameterType() { }
+    private ArgumentTypes() { }
 
     /**
      * The singleton type resolver.
@@ -76,30 +64,30 @@ public class SystemParameterType {
     /**
      * Function to quickly create simple
      * parameter types with lambdas.
-     * @see ParameterType
+     * @see ArgumentType
      */
     @SuppressWarnings("unchecked")
-    static <T> ParameterType<T> of(final Class<T> klass,
-                                   final String baseId,
-                                   final BiPredicate<Context, StringReader> acceptor,
-                                   final BiFunction<Context, StringReader, T> parser,
-                                   final TriConsumer<Context, StringBuilder, T> writer,
-                                   final Object... optional) {
+    static <T> ArgumentType<T> of(final Class<T> klass,
+                                  final String baseId,
+                                  final BiPredicate<Context, StringReader> acceptor,
+                                  final BiFunction<Context, StringReader, T> parser,
+                                  final TriConsumer<Context, StringBuilder, T> writer,
+                                  final Object... optional) {
         // parse identifier
         final TypeIdentifier bid = TypeIdentifier.of(baseId);
 
         // parse optionals
-        Suggester suggester = null;
+        CompleterFunc completerFunc = null;
 
         for (Object o : optional) {
-            if (o instanceof Suggester)
-                suggester = (Suggester) o;
+            if (o instanceof CompleterFunc)
+                completerFunc = (CompleterFunc) o;
         }
 
-        final Suggester finalSuggester = suggester;
+        final CompleterFunc finalCompleterFunc = completerFunc;
 
         // create type
-        ParameterType<T> type = new ParameterType<>() {
+        ArgumentType<T> type = new ArgumentType<>() {
             @Override
             public TypeIdentifier getBaseIdentifier() {
                 return bid;
@@ -127,8 +115,8 @@ public class SystemParameterType {
 
             @Override
             public void suggest(Context context, SuggestionAccumulator suggestions) {
-                if (finalSuggester != null)
-                    finalSuggester.doSuggestions(context, context.reader(), suggestions);
+                if (finalCompleterFunc != null)
+                    finalCompleterFunc.doSuggestions(context, context.reader().branch(), suggestions);
             }
 
             @Override
@@ -146,16 +134,16 @@ public class SystemParameterType {
     /**
      * Function to quickly create generic
      * parameter types with lambdas.
-     * @see ParameterType
+     * @see ArgumentType
      */
     @SuppressWarnings("unchecked")
-    static <T> GenericParameterType<T> ofGeneric(final Class<T> klass,
-                                                 final String baseId,
-                                                 final String paramsStr,
-                                                 final TriPredicate<Context, StringReader, LinkedHashMap<String, ParameterType>> acceptor,
-                                                 final TriFunction<Context, StringReader, LinkedHashMap<String, ParameterType>, T> parser,
-                                                 final QuadConsumer<Context, StringBuilder, T, LinkedHashMap<String, ParameterType>> writer,
-                                                 final Object... optional) {
+    static <T> GenericArgumentType<T> ofGeneric(final Class<T> klass,
+                                                final String baseId,
+                                                final String paramsStr,
+                                                final TriPredicate<Context, StringReader, LinkedHashMap<String, ArgumentType>> acceptor,
+                                                final TriFunction<Context, StringReader, LinkedHashMap<String, ArgumentType>, T> parser,
+                                                final QuadConsumer<Context, StringBuilder, T, LinkedHashMap<String, ArgumentType>> writer,
+                                                final Object... optional) {
         // parse identifier
         final TypeIdentifier bid = TypeIdentifier.of(baseId);
 
@@ -163,36 +151,39 @@ public class SystemParameterType {
         final String[] params = paramsStr.split(" ");
 
         // parse optionals
-        GenericSuggester suggester = null;
+        GenericCompleterFunc suggester = null;
 
         for (Object o : optional) {
-            if (o instanceof GenericSuggester)
-                suggester = (GenericSuggester) o;
+            if (o instanceof GenericCompleterFunc)
+                suggester = (GenericCompleterFunc) o;
         }
 
-        final GenericSuggester finalSuggester = suggester;
+        final GenericCompleterFunc finalSuggester = suggester;
 
         // create type
-        GenericParameterType<T> type = new GenericParameterType<>(params) {
+        GenericArgumentType<T> type = new GenericArgumentType<>(params) {
             @Override
-            public boolean accepts(Context context, StringReader reader, LinkedHashMap<String, ParameterType> types) {
+            public boolean accepts(Context context, StringReader reader, LinkedHashMap<String, ArgumentType> types) {
                 return acceptor.test(context, reader, types);
             }
 
             @Override
-            public T parse(Context context, StringReader reader, LinkedHashMap<String, ParameterType> types) {
+            public T parse(Context context, StringReader reader, LinkedHashMap<String, ArgumentType> types) {
                 return parser.apply(context, reader, types);
             }
 
             @Override
-            public void write(Context context, StringBuilder builder, T v, LinkedHashMap<String, ParameterType> types) {
+            public void write(Context context, StringBuilder builder, T v, LinkedHashMap<String, ArgumentType> types) {
                 writer.accept(context, builder, v, types);
             }
 
             @Override
-            public void suggest(Context context, SuggestionAccumulator suggestions, LinkedHashMap<String, ParameterType> types) {
+            public void suggest(Context context, SuggestionAccumulator suggestions, LinkedHashMap<String, ArgumentType> types) {
                 if (finalSuggester != null)
-                    finalSuggester.doSuggestions(context, context.reader(), suggestions, types);
+                    finalSuggester.doSuggestions(context, context.reader().branch(), suggestions, types);
+                else try {
+                    parse(context, context.reader());
+                } catch (Exception ignored) { }
             }
 
             @Override
@@ -225,7 +216,7 @@ public class SystemParameterType {
 
     /**
      * Parses a floating point number.
-     * @see SystemParameterType#parseNumber(Context, StringReader, BiFunction)
+     * @see ArgumentTypes#parseNumber(Context, StringReader, BiFunction)
      * @param context The parsing context.
      * @param reader The string reader.
      * @param parser The number parser.
@@ -285,7 +276,7 @@ public class SystemParameterType {
     /**
      * Base 10 number suggestions.
      */
-    private static final Suggester BASE_10_SUGGESTER = ((ctx, reader, acc) -> {
+    private static final CompleterFunc BASE_10_COMPLETER_FUNC = ((ctx, reader, acc) -> {
         String pre = reader.collect(c -> c != ' ');
         for (int i = 0; i < 10; i++)
             acc.suggest(pre + i);
@@ -294,7 +285,7 @@ public class SystemParameterType {
     /**
      * Base 10 number suggestions.
      */
-    private static final Suggester BASE_10F_SUGGESTER = ((ctx, reader, acc) -> {
+    private static final CompleterFunc BASE_10_F_COMPLETER_FUNC = ((ctx, reader, acc) -> {
         String pre = reader.collect(c -> c != ' ');
         String ext = "";
         if (!pre.contains("."))
@@ -313,7 +304,7 @@ public class SystemParameterType {
      * - {@code true}
      * {@link Boolean}
      */
-    public static final ParameterType<Boolean> BOOLEAN = of(Boolean.class, "system:bool",
+    public static final ArgumentType<Boolean> BOOLEAN = of(Boolean.class, "system:bool",
             (context, reader) -> reader.current() == '0' || reader.current() == '1' || reader.current() == 't' || reader.current() == 'f',
             ((context, reader) -> {
                 String str = reader.collect(c -> c != ' ');
@@ -330,11 +321,11 @@ public class SystemParameterType {
      * - {@code 0b101101}
      * {@link Byte}
      */
-    public static final ParameterType<Byte> BYTE = of(Byte.class, "system:byte",
+    public static final ArgumentType<Byte> BYTE = of(Byte.class, "system:byte",
             (context, reader) -> isDigit(reader.current(), 10),
             (context, reader) -> parseNumber(context, reader, Byte::parseByte),
             (context, builder, value) -> builder.append(value),
-            BASE_10_SUGGESTER
+            BASE_10_COMPLETER_FUNC
     );
 
     /**
@@ -345,11 +336,11 @@ public class SystemParameterType {
      * - {@code 0b101101}
      * {@link Short}
      */
-    public static final ParameterType<Short> SHORT = of(Short.class, "system:short",
+    public static final ArgumentType<Short> SHORT = of(Short.class, "system:short",
             (context, reader) -> isDigit(reader.current(), 10),
             (context, reader) -> parseNumber(context, reader, Short::parseShort),
             (context, builder, value) -> builder.append(value),
-            BASE_10_SUGGESTER
+            BASE_10_COMPLETER_FUNC
     );
 
     /**
@@ -360,11 +351,11 @@ public class SystemParameterType {
      * - {@code 0b101101}
      * {@link Integer}
      */
-    public static final ParameterType<Integer> INT = of(Integer.class, "system:int",
+    public static final ArgumentType<Integer> INT = of(Integer.class, "system:int",
             (context, reader) -> isDigit(reader.current(), 10),
             (context, reader) -> parseNumber(context, reader, Integer::parseInt),
             (context, builder, value) -> builder.append(value),
-            BASE_10_SUGGESTER
+            BASE_10_COMPLETER_FUNC
     );
 
     /**
@@ -375,31 +366,31 @@ public class SystemParameterType {
      * - {@code 0b101101}
      * {@link Long}
      */
-    public static final ParameterType<Long> LONG = of(Long.class, "system:long",
+    public static final ArgumentType<Long> LONG = of(Long.class, "system:long",
             (context, reader) -> isDigit(reader.current(), 10),
             (context, reader) -> parseNumber(context, reader, Long::parseLong),
             (context, builder, value) -> builder.append(value),
-            BASE_10_SUGGESTER
+            BASE_10_COMPLETER_FUNC
     );
 
     /**
      * {@link Float}
      */
-    public static final ParameterType<Float> FLOAT = of(Float.class, "system:float",
+    public static final ArgumentType<Float> FLOAT = of(Float.class, "system:float",
             (context, reader) -> isDigit(reader.current(), 10),
             (context, reader) -> parseNumberFloat(context, reader, Float::parseFloat),
             (context, builder, value) -> builder.append(value),
-            BASE_10F_SUGGESTER
+            BASE_10_F_COMPLETER_FUNC
     );
 
     /**
      * {@link Double}
      */
-    public static final ParameterType<Double> DOUBLE = of(Double.class, "system:double",
+    public static final ArgumentType<Double> DOUBLE = of(Double.class, "system:double",
             (context, reader) -> isDigit(reader.current(), 10),
             (context, reader) -> parseNumberFloat(context, reader, Double::parseDouble),
             (context, builder, value) -> builder.append(value),
-            BASE_10F_SUGGESTER
+            BASE_10_F_COMPLETER_FUNC
     );
 
     /**
@@ -409,7 +400,7 @@ public class SystemParameterType {
      * with a {@code "}, it parses until the end
      * of the string. (the closing quote)
      */
-    public static final ParameterType<String> STRING = of(String.class, "system:string",
+    public static final ArgumentType<String> STRING = of(String.class, "system:string",
             (context, reader) -> true,
             ((context, reader) -> {
                 if (reader.current() == '"') {
@@ -419,15 +410,16 @@ public class SystemParameterType {
                 return reader.collect(c -> c != ' ');
             }),
             (context, builder, s) -> builder.append("\"").append(s).append("\""),
-            ((Suggester) (ctx, reader, acc) -> {
+            ((CompleterFunc) (ctx, reader, acc) -> {
                 if (reader.current() == '"') {
-                    for (int i = 0; i < 100; i++)
-                        acc.suggest((char)i);
+                    for (char i = 0; i < 100; i++)
+                        acc.suggest(i);
 
                     reader.next();
                     reader.collect(c -> c != '"', 1);
                     return;
                 }
+
                 reader.collect(c -> c != ' ');
             })
     );
@@ -435,7 +427,7 @@ public class SystemParameterType {
     /**
      * {@link Character}
      */
-    public static final ParameterType<Character> CHAR = of(Character.class, "system:char",
+    public static final ArgumentType<Character> CHAR = of(Character.class, "system:char",
             (context, reader) -> true,
             ((context, reader) -> {
                 if (reader.current() == '\'') {
@@ -449,10 +441,10 @@ public class SystemParameterType {
 
     /**
      * {@link Identifier}
-     * Utilizes {@link SystemParameterType#STRING}
+     * Utilizes {@link ArgumentTypes#STRING}
      * for parsing the initial text.
      */
-    public static final ParameterType<Identifier> IDENTIFIER = of(Identifier.class, "system:identifier",
+    public static final ArgumentType<Identifier> IDENTIFIER = of(Identifier.class, "system:identifier",
             (context, stringReader) -> true,
             (Context context, StringReader reader) -> Identifier.of(STRING.parse(context, reader)),
             (context, builder, s) -> builder.append(s.toString()),
@@ -469,55 +461,25 @@ public class SystemParameterType {
     /**
      * {@link Path}
      * Parses a path from a string.
-     * Utilizes {@link SystemParameterType#STRING}
+     * Utilizes {@link ArgumentTypes#STRING}
      * for reading actual data and then parses it
      * using {@link Path#of(String, String...)}
      */
-    public static final ParameterType<Path> FILE_PATH = of(Path.class, "system:filepath",
+    public static final ArgumentType<Path> FILE_PATH = of(Path.class, "system:filepath",
             (context, reader) -> true,
             ((context, reader) -> Path.of(STRING.parse(context, reader))),
             (context, builder, v) -> builder.append("\"").append(v.toString()).append("\n")
     );
 
     /**
-     * {@link Vec3i}
-     * Parses a vector 3 of integers.
-     * Allowed notations are:
-     * - {@code 0 1 2} and,
-     * - {@code (0, 1, 2)}
-     */
-    public static final ParameterType<Vec3i> VEC_3_INT = of(Vec3i.class, "system:vec3i",
-            (context, reader) -> true,
-            ((context, reader) -> {
-                boolean bracketed = false;
-                if (reader.current() == '(') {
-                    bracketed = true;
-                    reader.next();
-                }
-
-                int[] c = new int[3];
-                for (int i = 0; i < 3; i++) {
-                    c[i] = SystemParameterType.INT.parse(context, reader);
-                    if (!bracketed)
-                        reader.collect(c1 -> c1 != ' ', 1);
-                    else
-                        reader.collect(c1 -> c1 != ',' && c1 != ')', 1);
-                }
-
-                return new Vec3i(c);
-            }),
-            (context, builder, v) -> builder.append(v.toString())
-    );
-
-    /**
      * A list of any other parameter type (generic).
      * Notation: {@code [elem1, elem2, ...]}
      */
-    public static final GenericParameterType<List> LIST = ofGeneric(List.class, "system:list", "T",
+    public static final GenericArgumentType<List> LIST = ofGeneric(List.class, "system:list", "T",
             (context, reader, types) -> true,
             ((context, reader, types) -> {
                 // get type
-                ParameterType<?> type = types.get("T");
+                ArgumentType<?> type = types.get("T");
 
                 // construct empty list
                 List<Object> list = new ArrayList<>();
@@ -533,7 +495,7 @@ public class SystemParameterType {
             }),
             ((context, builder, v, types) -> {
                 // get type
-                ParameterType type = types.get("T");
+                ArgumentType type = types.get("T");
 
                 // start with [
                 builder.append("[");
@@ -550,7 +512,7 @@ public class SystemParameterType {
             }),
 
             /* suggester */
-            ((GenericSuggester)(context, reader, suggestions, types) -> {
+            ((GenericCompleterFunc)(context, reader, suggestions, types) -> {
                 suggestions.suggest("]");
                 suggestions.suggest(",");
 
@@ -561,25 +523,66 @@ public class SystemParameterType {
             })
     );
 
-    public static final ParameterType<TypeIdentifier> TYPE_IDENTIFIER = of(TypeIdentifier.class, "system:type_identifier",
+    public static final ArgumentType<Vector> VECTOR_3F = of(Vector.class, "system:vec3f",
+            (context, reader) -> reader.current() == '(' || isDigit(reader.current(), 10),
+            ((context, reader) -> {
+                boolean bracketed = false;
+                if (reader.current() == '(') {
+                    bracketed = true;
+                    reader.next();
+                }
+
+                double[] c = new double[3];
+                for (int i = 0; i < 3; i++) {
+                    c[i] = ArgumentTypes.DOUBLE.parse(context, reader);
+                    if (!bracketed)
+                        reader.collect(c1 -> c1 != ' ', 1);
+                    else
+                        reader.collect(c1 -> c1 != ',' && c1 != ')', 1);
+                }
+
+                return new Vector(c[0], c[1], c[2]);
+            }),
+            ((context, builder, vector) -> {
+                builder.append("(")
+                        .append(vector.getX()).append(", ")
+                        .append(vector.getY()).append(", ")
+                        .append(vector.getZ()).append(")");
+            }),
+            ((CompleterFunc)(context, reader, acc) -> {
+                boolean bracketed = false;
+                if (reader.current() == '(') {
+                    bracketed = true;
+                    reader.next();
+                }
+
+                for (int i = 0; i < 3; i++) {
+                    DOUBLE.parse(context, reader);
+                    if (!bracketed) reader.collect(c1 -> c1 != ' ', 1);
+                    else            reader.collect(c1 -> c1 != ',' && c1 != ')', 1);
+                }
+            })
+    );
+
+    public static final ArgumentType<TypeIdentifier> TYPE_IDENTIFIER = of(TypeIdentifier.class, "system:type_identifier",
             (context, reader) -> true,
             (context, reader) -> TypeIdentifier.of(reader.collect(c -> c != ' ')),
             (context, builder, identifier) -> builder.append(identifier)
     );
 
-    public static final ParameterType<ParameterType> TYPE = of(ParameterType.class, "system:type",
+    public static final ArgumentType<ArgumentType> TYPE = of(ArgumentType.class, "system:type",
             (context, reader) -> true,
             (context, reader) -> context.engine().getTypeResolver().compile(TYPE_IDENTIFIER.parse(context, reader)),
             (context, builder, o) -> builder.append(o.getIdentifier())
     );
 
-    public static final ParameterType<UUID> UUID = of(java.util.UUID.class, "system:uuid",
+    public static final ArgumentType<UUID> UUID = of(java.util.UUID.class, "system:uuid",
             (context, reader) -> true,
             (context, reader) -> java.util.UUID.fromString(reader.collect(c -> c != ' ')),
             (context, builder, uuid) -> builder.append(uuid)
     );
 
-    public static final ParameterType<Class> CLASS = of(Class.class, "system:class",
+    public static final ArgumentType<Class> CLASS = of(Class.class, "system:class",
             (context, reader) -> true,
             ((context, reader) -> {
                 String n = reader.collect(c -> c != ' ');

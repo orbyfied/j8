@@ -1,10 +1,10 @@
-package net.orbyfied.j8.command.parameter;
+package net.orbyfied.j8.command.argument;
 
 import net.orbyfied.j8.command.Context;
 import net.orbyfied.j8.command.SuggestionAccumulator;
 import net.orbyfied.j8.util.StringReader;
 
-public interface ParameterType<T> {
+public interface ArgumentType<T> {
 
     TypeIdentifier getBaseIdentifier();
 

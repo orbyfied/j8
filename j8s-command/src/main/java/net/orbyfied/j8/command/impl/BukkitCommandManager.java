@@ -19,13 +19,13 @@ import java.util.List;
  * and execute/tab-complete commands.
  * TODO: find a way to get the message above the textbox
  */
-public class BukkitCommandEngine extends CommandEngine {
+public class BukkitCommandManager extends CommandManager {
 
     private static final SimpleCommandMap commandMap = (SimpleCommandMap) Bukkit.getCommandMap();
 
     private final Plugin plugin;
 
-    public BukkitCommandEngine(Plugin plugin) {
+    public BukkitCommandManager(Plugin plugin) {
         super();
         this.plugin = plugin;
 
@@ -78,10 +78,10 @@ public class BukkitCommandEngine extends CommandEngine {
 
     static class RegisteredBukkitCommand extends BukkitCommand {
 
-        protected final CommandEngine engine;
+        protected final CommandManager engine;
         protected final Node node;
 
-        protected RegisteredBukkitCommand(CommandEngine engine,
+        protected RegisteredBukkitCommand(CommandManager engine,
                                           Node node) {
 
             super(node.getName(),

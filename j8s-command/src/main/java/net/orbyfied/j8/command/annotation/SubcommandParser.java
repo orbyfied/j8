@@ -2,11 +2,11 @@ package net.orbyfied.j8.command.annotation;
 
 import net.orbyfied.j8.command.*;
 import net.orbyfied.j8.command.component.Flags;
-import net.orbyfied.j8.command.component.Selecting;
-import net.orbyfied.j8.command.parameter.Flag;
-import net.orbyfied.j8.command.parameter.Parameter;
-import net.orbyfied.j8.command.parameter.ParameterType;
-import net.orbyfied.j8.command.parameter.TypeIdentifier;
+import net.orbyfied.j8.command.component.Primary;
+import net.orbyfied.j8.command.argument.Flag;
+import net.orbyfied.j8.command.argument.Argument;
+import net.orbyfied.j8.command.argument.ArgumentType;
+import net.orbyfied.j8.command.argument.TypeIdentifier;
 import net.orbyfied.j8.registry.Identifier;
 import net.orbyfied.j8.util.StringReader;
 
@@ -15,7 +15,7 @@ public class SubcommandParser {
     /**
      * The command engine.
      */
-    protected final CommandEngine engine;
+    protected final CommandManager engine;
 
     /**
      * The root command node.
@@ -33,7 +33,7 @@ public class SubcommandParser {
     protected final BaseAnnotationProcessor bap;
 
     public SubcommandParser(BaseAnnotationProcessor bap,
-                            CommandEngine engine,
+                            CommandManager engine,
                             Node root,
                             String raw) {
         this.bap    = bap;
@@ -42,7 +42,7 @@ public class SubcommandParser {
         this.raw    = raw;
     }
 
-    public CommandEngine getEngine() {
+    public CommandManager getEngine() {
         return engine;
     }
 
@@ -89,7 +89,7 @@ public class SubcommandParser {
 
                 // parse type
                 TypeIdentifier tid = TypeIdentifier.of(reader.collect(c2 -> c2 != ' '));
-                ParameterType<?> type = engine.getTypeResolver().compile(tid);
+                ArgumentType<?> type = engine.getTypeResolver().compile(tid);
 
                 if (reader.current() != ' ')
                     throw new AnnotationProcessingException("Expected ' ' to continue to type declaration @ idx: " + reader.index());
@@ -145,7 +145,7 @@ public class SubcommandParser {
                 if (paramNode == null) {
                     // parse type into type identifier and resolve
                     TypeIdentifier tid = TypeIdentifier.of(type);
-                    ParameterType<?> pt = engine.getTypeResolver().compile(tid);
+                    ArgumentType<?> pt = engine.getTypeResolver().compile(tid);
 
                     // create parameter id
                     Identifier pid = new Identifier(null, name);
@@ -153,7 +153,7 @@ public class SubcommandParser {
                     // create node
                     paramNode = current.getOrCreateSubnode(name,
                             parent -> new Node(name, parent, parent.root())
-                                    .parameter(pt).getComponent(Parameter.class)
+                                    .parameter(pt).getComponent(Argument.class)
                                     .setIdentifier(pid)
                                     .getNode());
                 }
@@ -167,9 +167,9 @@ public class SubcommandParser {
         }
 
         // make sure to always set executable
-        if (current.getComponentOf(Selecting.class) == null)
+        if (current.getComponentOf(Primary.class) == null)
             current.executes(null);
-        if (last.getComponentOf(Selecting.class) == null)
+        if (last.getComponentOf(Primary.class) == null)
             last.executes(null);
 
         // return

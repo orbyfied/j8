@@ -1,14 +1,15 @@
 package net.orbyfied.j8.command;
 
+import net.orbyfied.j8.command.component.Completer;
 import net.orbyfied.j8.command.component.Executable;
-import net.orbyfied.j8.command.component.Selecting;
+import net.orbyfied.j8.command.component.Primary;
 import net.orbyfied.j8.command.component.Suggester;
 import net.orbyfied.j8.command.exception.*;
 import net.orbyfied.j8.command.impl.DelegatingNamespacedTypeResolver;
-import net.orbyfied.j8.command.impl.SystemParameterType;
-import net.orbyfied.j8.command.parameter.Flag;
-import net.orbyfied.j8.command.parameter.Parameter;
-import net.orbyfied.j8.command.parameter.TypeResolver;
+import net.orbyfied.j8.command.argument.ArgumentTypes;
+import net.orbyfied.j8.command.argument.Flag;
+import net.orbyfied.j8.command.argument.Argument;
+import net.orbyfied.j8.command.argument.TypeResolver;
 import net.orbyfied.j8.util.StringReader;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
@@ -21,7 +22,7 @@ import java.util.function.Consumer;
 /**
  * The engine of the command system.
  */
-public abstract class CommandEngine {
+public abstract class CommandManager {
 
     /**
      * The parameter type resolver.
@@ -39,12 +40,12 @@ public abstract class CommandEngine {
      */
     HashMap<String, Node> aliases = new HashMap<>();
 
-    public CommandEngine() {
+    public CommandManager() {
         typeResolver = new DelegatingNamespacedTypeResolver()
-                .namespace("system",    SystemParameterType.typeResolver);
+                .namespace("system",    ArgumentTypes.typeResolver);
     }
 
-    public CommandEngine register(Node command) {
+    public CommandManager register(Node command) {
         commands.add(command);
         aliases.put(command.getName(), command);
         for (String alias : command.aliases)
@@ -53,7 +54,7 @@ public abstract class CommandEngine {
         return this;
     }
 
-    public CommandEngine unregister(Node command) {
+    public CommandManager unregister(Node command) {
         commands.remove(command);
         aliases.remove(command.getName(), command);
         for (String alias : command.aliases)
@@ -67,7 +68,7 @@ public abstract class CommandEngine {
      * @param resolver It.
      * @return This.
      */
-    public CommandEngine setTypeResolver(TypeResolver resolver) {
+    public CommandManager setTypeResolver(TypeResolver resolver) {
         this.typeResolver = resolver;
         return this;
     }
@@ -125,14 +126,14 @@ public abstract class CommandEngine {
 
         // get mode (execute or suggest)
         boolean isSuggesting    = suggestions != null;
-        Context.Destiny destiny = (isSuggesting ? Context.Destiny.SUGGEST : Context.Destiny.EXECUTE);
+        Context.Target target = (isSuggesting ? Context.Target.SUGGEST : Context.Target.EXECUTE);
 
         // create string reader
         StringReader reader = new StringReader(str, 0);
 
         // create context
         Context context = new Context(this, sender);
-        context.destiny(destiny);
+        context.target(target);
         if (ctxConsumer != null)
             ctxConsumer.accept(context);
         context.successful(true);
@@ -153,21 +154,38 @@ public abstract class CommandEngine {
 
             // walk root
             Executable lastExecutable = null; // the executable to execute at the end
-            Selecting mainc = root.getComponentOf(Selecting.class); // bring out to walk root too
+            Primary primary = root.getComponentOf(Primary.class); // bring out to walk root too
             Suggester suggester = null; // last suggester
+            // nodes
             Node current = root;
+            Node last    = root;
+
+            // iteration
+            int i = 0;
+
+            System.out.println();
+
+            // loop
             while (true) {
+
+                // next iteration
+                last = current;
+                i++;
 
                 // update context
                 context.current = current;
                 context.currentExecutable = lastExecutable;
 
+                // pre
+                char pc = reader.current();
+                System.out.println("pc: '" + pc + "' @ " + reader.index());
+
                 // call walked
-                if (mainc != null)
-                    mainc.getNode().processWalked(context, reader);
+                if (primary != null)
+                    primary.getNode().processWalked(context, reader);
 
                 // is executable
-                if (mainc instanceof Executable exec) {
+                if (primary instanceof Executable exec) {
                     lastExecutable = exec;
                     try {
                         // execute walked
@@ -182,14 +200,15 @@ public abstract class CommandEngine {
                             throw new NodeExecutionException(root, current, e);
                         }
                     }
-
-                    // is parameter
-                } else if (mainc instanceof Parameter param) {
+                } else if (primary instanceof Argument param) {
                     // parse and save parameter
                     param.walked(context, reader);
                 }
 
-                // parse flags
+                ///////////////////////////
+                /////// FLAGS
+                //////////////////////////
+
                 while (reader.peek(1) == '-') {
                     int sidx = reader.index();
 
@@ -258,9 +277,6 @@ public abstract class CommandEngine {
                                             "Flag -" + c + " is not a switch, but no value was provided.");
 
                                 context.flagValues.put(flag, true);
-
-                                // advance
-                                reader.next();
                             }
                         } else {
                             for (Map.Entry<Character, Flag<?>> entry : context.flagsByChar.entrySet())
@@ -270,47 +286,95 @@ public abstract class CommandEngine {
 
                 }
 
-                // suggest
+                ///////////////////////////
+                /////// NEXT
+                //////////////////////////
+
+                // suggestions
                 Suggester tempSuggester;
                 if (isSuggesting && (tempSuggester = current.getComponentOf(Suggester.class)) != null)
                     suggester = tempSuggester;
 
-                // skip to next character
-                reader.next();
+                // skip space
+                reader.collect(c -> c == ' ');
 
                 // error handling
                 int idx = reader.index();
                 char cb = reader.current();
 
-                // get main functional component
-                // and set current to new node
-                mainc = current.getNextSubnode(context, reader);
-
-                // unknown subcommand
-                if (!isSuggesting && mainc == null && cb != StringReader.DONE) {
-                    throw new NodeParseException(root, current, new ErrorLocation(reader, idx - 1, reader.index()),
-                            "Unknown subcommand.");
+                // check if we are done
+                if (reader.current() == StringReader.DONE) {
+                    if (pc == StringReader.DONE)
+                        current = null;
+                    break;
                 }
 
+                // get new primary component
+                // and set current to new node
+                primary = current.getNextSubnode(context, reader);
+
+                // unknown subcommand
+                if (!isSuggesting && primary == null) {
+                    throw new NodeParseException(
+                            root, current,
+                            new ErrorLocation(reader, idx - 1, reader.index()),
+                            "Unknown subcommand."
+                    );
+                }
+
+                System.out.println("I " + i + " | primary-component: " + primary +
+                        ", node: " + ((primary == null) ? "<null>" : primary.getNode().getName()) +
+                        ", char: '" + reader.current() + "' (@ " + reader.index() + ")");
+
                 // break if we ended
-                if (reader.current() == StringReader.DONE || mainc == null) {
+                if (primary == null) {
                     current = null;
                     break;
                 }
 
                 // get current node
-                current = mainc.getNode();
+                current = primary.getNode();
 
             }
 
-            // suggest
-            if (isSuggesting && suggester != null)
-                suggester.suggestNext(
-                        context,
-                        suggestions,
-                        reader,
-                        current
+            /////////////////////////////////////
+            /////// SUGGESTIONS
+            /////////////////////////////////////
+
+            if (isSuggesting) {
+                System.out.println(
+                        "current: " + (current != null ? current.getName() : "<null>")
+                        + ", last: " + (last != null ? last.getName() : "<null>")
+                        + ", char: '" + reader.current() + "' (@ " + reader.index() + ")"
                 );
+
+                // no node to complete, suggest
+                // following nodes with last node
+                if (current == null || reader.prev() == ' ') {
+                    // get suggester
+                    Suggester sug = last.getComponent(Suggester.class);
+                    // use default suggester if no component is defined
+                    if (sug == null) {
+                        // complete all children
+                        for (Node child : last.getChildren()) {
+                            // get completer component
+                            Completer comp;
+                            if ((comp = child.getComponent(Completer.class)) != null)
+                                // invoke completions
+                                comp.complete(context, suggestions, reader.branch());
+                        }
+                    } else {
+                        // call defined suggester
+                        sug.suggest(context, suggestions, reader.branch());
+                    }
+                } else {
+                    // get completer component
+                    Completer comp;
+                    if ((comp = current.getComponent(Completer.class)) != null)
+                        // invoke completions
+                        comp.complete(context, suggestions, reader.branch());
+                }
+            }
 
             // execute
             if (lastExecutable != null && !isSuggesting && context.successful()) {

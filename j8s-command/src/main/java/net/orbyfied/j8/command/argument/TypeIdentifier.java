@@ -1,4 +1,4 @@
-package net.orbyfied.j8.command.parameter;
+package net.orbyfied.j8.command.argument;
 
 import net.orbyfied.j8.registry.Identifier;
 import net.orbyfied.j8.util.StringReader;
@@ -30,16 +30,32 @@ public class TypeIdentifier extends Identifier implements Cloneable {
 
     ////////////////////////////////////////////////
 
+    /**
+     * The generic type parameters (optional)
+     */
     private ArrayList<TypeIdentifier> typeParams = new ArrayList<>();
 
+    /**
+     * Constructor.
+     * @param namespace Base ID namespace.
+     * @param path Base ID path.
+     */
     public TypeIdentifier(String namespace,
                           String path) {
+        // init Identifier
         super(namespace, path);
     }
 
-    public ArrayList<TypeIdentifier> getTypeParams() {
+    /**
+     * Get the type parameters included in this
+     * type identifier / descriptor.
+     * @return The list of type parameters. (MUTABLE)
+     */
+    public ArrayList<TypeIdentifier> getTypeParameters() {
         return typeParams;
     }
+
+    /* Object Shit */
 
     @Override
     public TypeIdentifier clone() {

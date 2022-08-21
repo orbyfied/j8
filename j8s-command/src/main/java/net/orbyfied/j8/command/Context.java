@@ -3,7 +3,7 @@ package net.orbyfied.j8.command;
 import net.md_5.bungee.api.ChatColor;
 import net.orbyfied.j8.command.component.Executable;
 import net.orbyfied.j8.command.exception.CommandHaltException;
-import net.orbyfied.j8.command.parameter.Flag;
+import net.orbyfied.j8.command.argument.Flag;
 import net.orbyfied.j8.registry.Identifier;
 import net.orbyfied.j8.util.StringReader;
 import org.bukkit.command.CommandSender;
@@ -12,7 +12,7 @@ import java.util.*;
 
 public class Context {
 
-    public Context(CommandEngine engine,
+    public Context(CommandManager engine,
                    CommandSender sender) {
         this.engine = engine;
         this.sender = sender;
@@ -26,7 +26,7 @@ public class Context {
     /**
      * The purspose of this invocation.
      */
-    protected Destiny destiny;
+    protected Target target;
 
     /**
      * The root command node.
@@ -34,9 +34,9 @@ public class Context {
     protected Node rootCommand;
 
     /**
-     * The list of arguments, parameters and symbols.
+     * The list of argument values.
      */
-    protected final HashMap<Identifier, Object> symbols = new HashMap<>();
+    protected final HashMap<Identifier, Object> argValues = new HashMap<>();
 
     /**
      * Options usable in parsing.
@@ -46,7 +46,7 @@ public class Context {
     /**
      * The command engine.
      */
-    protected final CommandEngine engine;
+    protected final CommandManager engine;
 
     /**
      * The intermediate status text.
@@ -105,7 +105,7 @@ public class Context {
         return this;
     }
 
-    public CommandEngine engine() {
+    public CommandManager engine() {
         return engine;
     }
 
@@ -113,8 +113,8 @@ public class Context {
         return sender;
     }
 
-    public Destiny destiny() {
-        return destiny;
+    public Target target() {
+        return target;
     }
 
     public String intermediateText() {
@@ -137,8 +137,8 @@ public class Context {
         return successful;
     }
 
-    public Context destiny(Destiny destiny) {
-        this.destiny = destiny;
+    public Context target(Target target) {
+        this.target = target;
         return this;
     }
 
@@ -187,50 +187,50 @@ public class Context {
 
     /* ----- Symbols ----- */
 
-    public HashMap<Identifier, Object> getSymbols() {
-        return symbols;
+    public HashMap<Identifier, Object> getArgumentValues() {
+        return argValues;
     }
 
     @SuppressWarnings("unchecked")
-    public <T> T getSymbol(Identifier identifier) {
-        return (T) symbols.get(identifier);
+    public <T> T getArgument(Identifier identifier) {
+        return (T) argValues.get(identifier);
     }
 
-    public <T> T getSymbol(String id) {
-        return getSymbol(Identifier.of(id));
+    public <T> T getArgument(String id) {
+        return getArgument(Identifier.of(id));
     }
 
     @SuppressWarnings("unchecked")
-    public <T> T getSymbol(Identifier identifier, Class<T> tClass) {
-        return (T) symbols.get(identifier);
+    public <T> T getArgument(Identifier identifier, Class<T> tClass) {
+        return (T) argValues.get(identifier);
     }
 
-    public <T> T getSymbol(String id, Class<T> tClass) {
-        return getSymbol(Identifier.of(id), tClass);
+    public <T> T getArgument(String id, Class<T> tClass) {
+        return getArgument(Identifier.of(id), tClass);
     }
 
-    public Context setSymbol(Identifier id, Object o) {
-        symbols.put(id, o);
+    public Context setArgument(Identifier id, Object o) {
+        argValues.put(id, o);
         return this;
     }
 
-    public Context setSymbol(String id, Object o) {
+    public Context setArgument(String id, Object o) {
         return setOption(Identifier.of(id), o);
     }
 
-    public Context unsetSymbol(Identifier id) {
-        symbols.remove(id);
+    public Context unsetArgument(Identifier id) {
+        argValues.remove(id);
         return this;
     }
 
-    public Context unsetSymbol(String id) {
-        return unsetSymbol(Identifier.of(id));
+    public Context unsetArgument(String id) {
+        return unsetArgument(Identifier.of(id));
     }
 
     /* ----- Options ----- */
 
     public HashMap<Identifier, Object> getOptions() {
-        return symbols;
+        return argValues;
     }
 
     public <T> Optional<T> getLocalOption(String identifier, Class<T> tClass) {
@@ -355,9 +355,9 @@ public class Context {
     /**
      * Declares the purposes/destinies
      * of an invocation.
-     * @see Context#destiny
+     * @see Context#target
      */
-    public enum Destiny {
+    public enum Target {
 
         SUGGEST,
         EXECUTE

@@ -15,7 +15,7 @@ import java.util.Set;
  */
 public class Executable
         extends AbstractNodeComponent
-        implements Selecting, Functional, Completable {
+        implements Primary, Functional, Completer {
 
     public Executable(Node node) {
         super(node);
@@ -55,7 +55,7 @@ public class Executable
         return this;
     }
 
-    /* Selecting, Functional and Completable */
+    /* Primary, Functional and Completer */
 
     @Override
     public boolean selects(Context ctx, StringReader reader) {
@@ -89,7 +89,7 @@ public class Executable
     }
 
     @Override
-    public void completeSelf(Context context, Node from, SuggestionAccumulator suggestions) {
+    public void complete(Context context, SuggestionAccumulator suggestions, StringReader reader) {
         // suggest node name
         suggestions.suggest(node.getName());
     }

@@ -1,6 +1,5 @@
 package net.orbyfied.j8.command.exception;
 
-import net.orbyfied.j8.command.ErrorLocation;
 import net.orbyfied.j8.command.Node;
 
 public class NodeParseWarning extends NodeParseException implements Warning {

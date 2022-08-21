@@ -1,4 +1,4 @@
-package net.orbyfied.j8.command.parameter;
+package net.orbyfied.j8.command.argument;
 
 import net.orbyfied.j8.command.component.Flags;
 
@@ -23,7 +23,7 @@ public class Flag<T> {
     /**
      * The type of this flag.
      */
-    final ParameterType<T> type;
+    final ArgumentType<T> type;
 
     /**
      * Default value.
@@ -39,7 +39,7 @@ public class Flag<T> {
             Flags owner,
             String name,
             Character ch,
-            ParameterType<T> type,
+            ArgumentType<T> type,
 
             boolean isSwitch
     ) {
@@ -63,7 +63,7 @@ public class Flag<T> {
         return ch;
     }
 
-    public ParameterType<T> getType() {
+    public ArgumentType<T> getType() {
         return type;
     }
 

@@ -1,4 +1,4 @@
-package net.orbyfied.j8.command;
+package net.orbyfied.j8.command.component;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

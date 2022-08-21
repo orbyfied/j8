@@ -1,14 +1,13 @@
 package net.orbyfied.j8.command.component;
 
 import net.orbyfied.j8.command.Context;
-import net.orbyfied.j8.command.Node;
 import net.orbyfied.j8.command.NodeComponent;
 import net.orbyfied.j8.command.SuggestionAccumulator;
 import net.orbyfied.j8.util.StringReader;
 
 /**
  * A node component which handles completion
- * of the next node.
+ * of the current or next node.
  */
 public interface Suggester extends NodeComponent {
 
@@ -18,11 +17,9 @@ public interface Suggester extends NodeComponent {
      * @param ctx The context.
      * @param builder The suggestions builder.
      * @param reader The string reader.
-     * @param next The following node.
      */
-    void suggestNext(Context ctx,
-                     SuggestionAccumulator builder,
-                     StringReader reader,
-                     Node next);
+    void suggest(Context ctx,
+                 SuggestionAccumulator builder,
+                 StringReader reader);
 
 }

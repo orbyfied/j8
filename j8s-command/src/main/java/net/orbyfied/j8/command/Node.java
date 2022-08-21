@@ -3,10 +3,9 @@ package net.orbyfied.j8.command;
 import net.orbyfied.j8.command.component.*;
 import net.orbyfied.j8.command.component.Properties;
 import net.orbyfied.j8.command.impl.CommandNodeExecutor;
-import net.orbyfied.j8.command.impl.DefaultSuggester;
-import net.orbyfied.j8.command.parameter.Flag;
-import net.orbyfied.j8.command.parameter.Parameter;
-import net.orbyfied.j8.command.parameter.ParameterType;
+import net.orbyfied.j8.command.argument.Flag;
+import net.orbyfied.j8.command.argument.Argument;
+import net.orbyfied.j8.command.argument.ArgumentType;
 import net.orbyfied.j8.util.ReflectionUtil;
 import net.orbyfied.j8.util.StringReader;
 
@@ -80,7 +79,6 @@ public class Node {
         this.name   = name;
         this.parent = parent;
         this.root = Objects.requireNonNullElse(root, this);
-        addComponent(new DefaultSuggester(this));
     }
 
     /* Getters. */
@@ -254,29 +252,29 @@ public class Node {
         return node;
     }
 
-    public Selecting getNextSubnode(Context ctx, StringReader reader) {
+    public Primary getNextSubnode(Context ctx, StringReader reader) {
         if (reader.current() == StringReader.DONE)
             return null;
         Node node;
         if ((node = fastMappedChildren.get(reader.branch().collect(c -> c != ' '))) != null)
-            return node.getComponentOf(Selecting.class);
-        Selecting sel;
+            return node.getComponentOf(Primary.class);
+        Primary sel;
         for (Node child : children)
-            if ((sel = child.getComponentOf(Selecting.class)).selects(ctx, reader.branch()))
+            if ((sel = child.getComponentOf(Primary.class)).selects(ctx, reader.branch()))
                 return sel;
         return null;
     }
 
     public Node processWalked(Context context, StringReader reader) {
         for (NodeComponent component : components)
-            if (!(component instanceof Selecting) && component instanceof Functional fc)
+            if (!(component instanceof Primary) && component instanceof Functional fc)
                 fc.walked(context, reader);
         return this;
     }
 
     public Node processExecute(Context context) {
         for (NodeComponent component : components)
-            if (!(component instanceof Selecting) && component instanceof Functional fc)
+            if (!(component instanceof Primary) && component instanceof Functional fc)
                 fc.execute(context);
         return this;
     }
@@ -305,8 +303,8 @@ public class Node {
         return this;
     }
 
-    public Node parameter(ParameterType<?> type) {
-        addComponent(new Parameter(this)).setType(type);
+    public Node parameter(ArgumentType<?> type) {
+        addComponent(new Argument(this)).setType(type);
         return this;
     }
 
@@ -322,20 +320,20 @@ public class Node {
         return this;
     }
 
-    public Node flag(String name, Character ch, ParameterType<?> type, boolean isSwitch) {
+    public Node flag(String name, Character ch, ArgumentType<?> type, boolean isSwitch) {
         component(Flags.class, Flags::new, (node, flags) ->
                 flags.addFlag(name, ch, type, isSwitch));
         return this;
     }
 
-    public Node flag(String name, ParameterType<?> type) {
+    public Node flag(String name, ArgumentType<?> type) {
         component(Flags.class, Flags::new, (node, flags) ->
                 flags.addFlag(name, null, type, false));
         return this;
     }
 
     public Node thenParameter(String name,
-                              ParameterType<?> type) {
+                              ArgumentType<?> type) {
         Node node = new Node(name, this, root);
         node.parameter(type);
         this.addChild(node);
@@ -343,11 +341,11 @@ public class Node {
     }
 
     public Node thenParameter(String name,
-                              ParameterType<?> type,
-                              BiConsumer<Node, Parameter> consumer) {
+                              ArgumentType<?> type,
+                              BiConsumer<Node, Argument> consumer) {
         Node node = thenParameter(name, type);
         if (consumer != null)
-            consumer.accept(node, node.getComponent(Parameter.class));
+            consumer.accept(node, node.getComponent(Argument.class));
         return this;
     }
 
@@ -378,8 +376,8 @@ public class Node {
             return;
         }
 
-        Parameter param;
-        if ((param = getComponent(Parameter.class)) != null) { // is parameter
+        Argument param;
+        if ((param = getComponent(Argument.class)) != null) { // is parameter
             stream.println(" ".repeat(depth) + "\\" + name + " <" + param.getType().getIdentifier() + " " + param.getIdentifier() + ">");
         } else {
             stream.println(" ".repeat(depth) + "/" + name);

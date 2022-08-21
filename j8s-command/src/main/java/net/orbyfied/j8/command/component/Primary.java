@@ -4,7 +4,7 @@ import net.orbyfied.j8.command.Context;
 import net.orbyfied.j8.command.NodeComponent;
 import net.orbyfied.j8.util.StringReader;
 
-public interface Selecting extends NodeComponent {
+public interface Primary extends NodeComponent {
 
     boolean selects(Context ctx, StringReader reader);
 

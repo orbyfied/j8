@@ -3,8 +3,8 @@ package net.orbyfied.j8.command.component;
 import net.orbyfied.j8.command.AbstractNodeComponent;
 import net.orbyfied.j8.command.Context;
 import net.orbyfied.j8.command.Node;
-import net.orbyfied.j8.command.parameter.Flag;
-import net.orbyfied.j8.command.parameter.ParameterType;
+import net.orbyfied.j8.command.argument.Flag;
+import net.orbyfied.j8.command.argument.ArgumentType;
 import net.orbyfied.j8.util.StringReader;
 
 import java.util.*;
@@ -53,7 +53,7 @@ public class Flags
         return this;
     }
 
-    public Flags addFlag(String name, Character ch, ParameterType<?> type, boolean isSwitch) {
+    public Flags addFlag(String name, Character ch, ArgumentType<?> type, boolean isSwitch) {
         return addFlag(new Flag<>(this, name, ch, type, isSwitch));
     }
 

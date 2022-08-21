@@ -1,6 +1,6 @@
 package net.orbyfied.j8.command.annotation;
 
-import net.orbyfied.j8.command.CommandEngine;
+import net.orbyfied.j8.command.CommandManager;
 import net.orbyfied.j8.command.component.Properties;
 import net.orbyfied.j8.command.component.Executable;
 import net.orbyfied.j8.command.Node;
@@ -17,7 +17,7 @@ public class BaseAnnotationProcessor {
     /**
      * The command engine.
      */
-    protected final CommandEngine engine;
+    protected final CommandManager engine;
 
     /**
      * The descriptor object.
@@ -34,7 +34,7 @@ public class BaseAnnotationProcessor {
      */
     protected Node root;
 
-    public BaseAnnotationProcessor(CommandEngine engine, Object obj) {
+    public BaseAnnotationProcessor(CommandManager engine, Object obj) {
         this.engine = engine;
         this.obj    = obj;
         this.klass  = obj.getClass();
@@ -44,7 +44,7 @@ public class BaseAnnotationProcessor {
         return obj;
     }
 
-    public CommandEngine getEngine() {
+    public CommandManager getEngine() {
         return engine;
     }
 
@@ -124,7 +124,7 @@ public class BaseAnnotationProcessor {
                         args.add(cmd);
                         for (String paramn : paramNames) {
                             Identifier pid = new Identifier(null, paramn);
-                            args.add(ctx.getSymbol(pid));
+                            args.add(ctx.getArgument(pid));
                         }
 
                         // invoke
