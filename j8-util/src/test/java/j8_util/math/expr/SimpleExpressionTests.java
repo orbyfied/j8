@@ -13,7 +13,11 @@ public class SimpleExpressionTests {
     @Test
     void test_simpleLiteralTokens() {
         // input string
-        final String str = "sqrt(9, 16)";
+        final String str = "math.avg(2, 4, 6)";
+
+        // prepare global context
+        Context gctx = Context.newDefaultGlobal()
+                .setValue("PI", Math.PI);
 
         // create parser and lex
         ExpressionParser parser = new ExpressionParser()
@@ -33,11 +37,8 @@ public class SimpleExpressionTests {
         if (parser.getAstNode() != null) {
             System.out.println("AST:    | " + parser.getAstNode());
             System.out.println("EVAL:   | " + parser.getAstNode().evaluate(
-                    Context.newGlobal()
-                            .setValue(ExpressionValue.of("sqrt"), ExpressionFunction.make(args ->
-                                    ExpressionValue.ofDouble(Math.sqrt(args[0].getValueAs()) *
-                                            args[1].getValueAs(Double.class))
-                            ))
+                    gctx.child()
+                            .setValue("y", 69)
             ));
         }
     }

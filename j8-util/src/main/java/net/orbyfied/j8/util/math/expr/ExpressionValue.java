@@ -2,15 +2,49 @@ package net.orbyfied.j8.util.math.expr;
 
 import net.orbyfied.j8.util.math.expr.error.ExprInterpreterException;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 
+@SuppressWarnings("unchecked")
 public class ExpressionValue<T> {
+
+    /* Tables */
+
+    public static ExpressionValue<?> newTable() {
+        return new ExpressionValue<>(Type.TABLE, new HashMap<>());
+    }
+
+    public static ExpressionValue<?> tableSet(ExpressionValue<?> t, Object k, Object v) {
+        t.checkType(Type.TABLE);
+        t.getValueAs(HashMap.class).put(ExpressionValue.of(k), ExpressionValue.of(v));
+        return t;
+    }
+
+    public static ExpressionValue<?> tableGet(ExpressionValue<?> t, Object k) {
+        t.checkType(Type.TABLE);
+        return (ExpressionValue<?>) t.getValueAs(HashMap.class).get(ExpressionValue.of(k));
+    }
+
+    public static boolean tableHas(ExpressionValue<?> t, Object k) {
+        t.checkType(Type.TABLE);
+        return t.getValueAs(HashMap.class).containsKey(ExpressionValue.of(k));
+    }
+
+    public static int tableSize(ExpressionValue<?> t) {
+        t.checkType(Type.TABLE);
+        return t.getValueAs(HashMap.class).size();
+    }
+
+    /* Values */
 
     @SuppressWarnings("unchecked")
     public static ExpressionValue<?> of(Object val) {
+        if (val instanceof ExpressionValue)
+            return (ExpressionValue<?>) val;
+
         if (val == null)
             return NIL;
 
@@ -52,6 +86,12 @@ public class ExpressionValue<T> {
          * Obviously encapsulates a {@link HashMap}
          */
         TABLE("table", HashMap.class, v -> v.getValueAs().toString()),
+
+        /**
+         * A list structure based on a Java array list.
+         * Encapsulates an {@link ArrayList}
+         */
+        ARRAY("array", ArrayList.class, v -> v.getValueAs(ArrayList.class).toString()),
 
         /**
          * A callable function.
@@ -143,6 +183,29 @@ public class ExpressionValue<T> {
 
     public void setValue(T val) {
         this.val = val;
+    }
+
+    /* -------- Tables --------- */
+
+    public ExpressionValue<T> tableSet(Object k, Object v) {
+        checkType(Type.TABLE);
+        getValueAs(HashMap.class).put(ExpressionValue.of(k), ExpressionValue.of(v));
+        return this;
+    }
+
+    public ExpressionValue<?> tableGet(Object k) {
+        checkType(Type.TABLE);
+        return (ExpressionValue<?>) getValueAs(HashMap.class).get(ExpressionValue.of(k));
+    }
+
+    public boolean tableHas(Object k) {
+        checkType(Type.TABLE);
+        return getValueAs(HashMap.class).containsKey(ExpressionValue.of(k));
+    }
+
+    public int tableSize() {
+        checkType(Type.TABLE);
+        return getValueAs(HashMap.class).size();
     }
 
     ////////////////////////////////////////////////////

@@ -78,6 +78,7 @@ public class ExpressionParser {
                 case '(' -> tk = new Token<>(Token.Type.LEFT_PARENTHESIS);
                 case ')' -> tk = new Token<>(Token.Type.RIGHT_PARENTHESIS);
                 case ',' -> tk = new Token<>(Token.Type.COMMA);
+                case '.' -> tk = new Token<>(Token.Type.DOT);
             }
 
             if (tk != null) {
@@ -227,10 +228,26 @@ public class ExpressionParser {
             // check for global identifier index
             if (tok.getType() == Token.Type.IDENTIFIER) {
                 // create identifier node
-                ExpressionNode key = new ConstantNode(new ExpressionValue<>(ExpressionValue.Type.STRING, tok.getValueAs()));
+                IndexNode indexNode = new IndexNode(null,
+                        new ConstantNode(new ExpressionValue<>(ExpressionValue.Type.STRING, tok.getValueAs())));
+
+                // check for more
+                Token<?> tk1;
+                while ((tk1 = tokenReader.next()) != null &&
+                        tk1.getType() == Token.Type.DOT) {
+                    // advance and try collect identifier
+                    tokenReader.next();
+                    if (tokenReader.current().type != Token.Type.IDENTIFIER)
+                        throw new ExprParserException("expected identifier");
+                    String id = tokenReader.current().getValueAs();
+
+                    // update index node
+                    indexNode = new IndexNode(indexNode,
+                            new ConstantNode(new ExpressionValue<>(ExpressionValue.Type.STRING, id)));
+                }
 
                 // check function call
-                if (tokenReader.next() != null &&
+                if (tokenReader.current() != null &&
                         tokenReader.current().type == Token.Type.LEFT_PARENTHESIS) {
                     // collect parameters
                     List<ExpressionNode> parameters = new ArrayList<>();
@@ -248,12 +265,15 @@ public class ExpressionParser {
                         tokenReader.prev();
                     }
 
+                    // advance past right parenthesis
+                    tokenReader.next();
+
                     // return call node
-                    return new CallNode(new IndexNode(null, key), parameters);
+                    return new CallNode(indexNode, parameters);
                 }
 
                 // return normal index node
-                return new IndexNode(null, key);
+                return indexNode;
             }
 
             // check for unary operator

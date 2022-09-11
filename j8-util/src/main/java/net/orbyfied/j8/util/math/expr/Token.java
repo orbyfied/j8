@@ -11,6 +11,7 @@ public class Token<T> {
         LEFT_PARENTHESIS("left_paren", null, false),
         RIGHT_PARENTHESIS("right_paren", null, false),
         COMMA("comma", null, false),
+        DOT("dot", null, false),
 
         IDENTIFIER("identifier", String.class, true);
 
