@@ -3,6 +3,7 @@ package net.orbyfied.j8.util;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 /**
@@ -23,20 +24,55 @@ public class StringReader {
     // the total string length
     private int len;
 
+    /**
+     * Constructor.
+     * Creates a new string reader for the provided
+     * string from the provided index.
+     * @param str The string.
+     * @param index The index.
+     */
     public StringReader(String str, int index) {
         this.str   = str;
         this.len   = str.length();
         this.index = index;
     }
 
+    /**
+     * @see StringReader#StringReader(String, int)
+     * Parameter {@code index} is defaulted to 0.
+     */
+    public StringReader(String str) {
+        this(str, 0);
+    }
+
+    /**
+     * Clamps an index in to the minimum (0) and
+     * maximum (string length) index.
+     * @param index The index.
+     * @return The clamped index.
+     */
     public int clamp(int index) {
         return Math.min(len - 1, Math.max(0, index));
     }
 
+    /**
+     * Get a character from the string by
+     * index. Clamped.
+     * @param i The index.
+     * @return The character.
+     */
     public char peekAt(int i) {
         return str.charAt(clamp(i));
     }
 
+    /**
+     * Get a character from the string relative
+     * to the current index. Not clamped, rather
+     * returns {@link StringReader#DONE} if the
+     * index is in an invalid position.
+     * @param i The index.
+     * @return The character or {@link StringReader#DONE}
+     */
     public char peek(int i) {
         int idx = index + i;
         if (idx < 0 || idx >= len)
@@ -44,33 +80,71 @@ public class StringReader {
         return str.charAt(idx);
     }
 
+    /**
+     * Advances the position by 1 and
+     * returns the character or {@link StringReader#DONE}
+     * if in an invalid position.
+     * @return The character.
+     */
     public char next() {
-        if ((index += 1) >= len) return DONE;
+        if ((index += 1) >= len || index < 0) return DONE;
         return str.charAt(index);
     }
 
+    /**
+     * Advances the position by {@code a} and
+     * returns the character or {@link StringReader#DONE}
+     * if in an invalid position.
+     * @param a The amount to advance by.
+     * @return The character.
+     */
     public char next(int a) {
-        if ((index += a) >= len) return DONE;
+        if ((index += a) >= len || index < 0) return DONE;
         return str.charAt(index);
     }
 
+    /**
+     * Decreases the position by 1 and
+     * returns the character or {@link StringReader#DONE}
+     * if in an invalid position.
+     * @return The character.
+     */
     public char prev() {
-        return str.charAt(clamp(index -= 1));
+        if ((index -= 1) >= len || index < 0) return DONE;
+        return str.charAt(index);
     }
 
+    /**
+     * Decreases the position by {@code a} and
+     * returns the character or {@link StringReader#DONE}
+     * if in an invalid position.
+     * @param a The amount to decrease by.
+     * @return The character.
+     */
     public char prev(int a) {
-        return str.charAt(clamp(index -= a));
+        if ((index -= a) >= len || index < 0) return DONE;
+        return str.charAt(index);
     }
 
+    /**
+     * Returns the character at the current position
+     * or {@link StringReader#DONE} if in an invalid position.
+     * @return The character.
+     */
     public char current() {
         if (index < 0 || index >= len) return DONE;
         return str.charAt(index);
     }
 
-    private static final Predicate<Character> ONPRED = c -> true;
+    // predicate to always return true
+    private static final Predicate<Character> ALWAYS = c -> true;
 
+    /**
+     * Collects until the end of the string.
+     * @return The string.
+     */
     public String collect() {
-        return collect(ONPRED, null);
+        return collect(ALWAYS, null);
     }
 
     public String collect(Predicate<Character> pred, int offEnd) {
@@ -90,13 +164,23 @@ public class StringReader {
     }
 
     public String collect(Predicate<Character> pred, Predicate<Character> skip) {
+        return collect(pred, skip, null);
+    }
+
+    public String collect(Predicate<Character> pred, Predicate<Character> skip, Consumer<Character> charEval) {
         if (pred == null)
-            pred = ONPRED;
+            pred = ALWAYS;
         StringBuilder b = new StringBuilder();
         prev();
         char c;
-        while ((c = next()) != DONE && pred.test(c)) {
-            if (skip == null || !skip.test(c)) {
+        while ((c = next()) != DONE) {
+            boolean sf = skip != null && skip.test(c);
+            if (!sf) {
+                if (!pred.test(c))
+                    break;
+
+                if (charEval != null)
+                    charEval.accept(c);
                 b.append(c);
             }
         }
@@ -110,7 +194,7 @@ public class StringReader {
 
     public String pcollect(Predicate<Character> pred, Predicate<Character> skip) {
         if (pred == null)
-            pred = ONPRED;
+            pred = ALWAYS;
         StringBuilder b = new StringBuilder();
         int off = 0;
         char c;

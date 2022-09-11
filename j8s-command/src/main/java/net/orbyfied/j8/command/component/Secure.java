@@ -5,7 +5,6 @@ import net.orbyfied.j8.command.Context;
 import net.orbyfied.j8.command.Node;
 import net.orbyfied.j8.util.StringReader;
 import org.bukkit.ChatColor;
-import org.bukkit.permissions.Permission;
 
 import java.util.function.Function;
 

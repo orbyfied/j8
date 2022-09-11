@@ -1,6 +1,6 @@
 package net.orbyfied.j8.util.nbt;
 
-import net.minecraft.nbt.*;
+import net.minecraft.nbt.CompoundTag;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.DataInput;

@@ -372,7 +372,7 @@ public class Node {
     private void printTreeFancyNext(PrintStream stream,
                                     int depth) {
         if (depth >= 50) {
-            System.out.println(" ".repeat(depth) + " /!\\ Tree goes too deep! Over 50 entries deep.");
+            stream.println(" ".repeat(depth) + " /!\\ Tree goes too deep! Over 50 entries deep.");
             return;
         }
 

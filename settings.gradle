@@ -19,4 +19,6 @@ include 'j8-registry'
 include 'j8-event'
 include 'j8s-config'
 include 'test-plugin-1_18_2'
+include 'j8-util-bukkit'
+include 'j8-text'
 

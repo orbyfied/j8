@@ -1,5 +1,10 @@
 package net.orbyfied.j8.util.data;
 
+import net.orbyfied.j8.util.builder.Builder;
+import net.orbyfied.j8.util.builder.BuilderTemplate;
+import net.orbyfied.j8.util.builder.Constructor;
+import net.orbyfied.j8.util.builder.Property;
+
 import java.util.Objects;
 
 public class Pair<A, B> {

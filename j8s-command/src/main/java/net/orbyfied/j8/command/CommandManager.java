@@ -163,8 +163,6 @@ public abstract class CommandManager {
             // iteration
             int i = 0;
 
-            System.out.println();
-
             // loop
             while (true) {
 
@@ -178,7 +176,6 @@ public abstract class CommandManager {
 
                 // pre
                 char pc = reader.current();
-                System.out.println("pc: '" + pc + "' @ " + reader.index());
 
                 // call walked
                 if (primary != null)
@@ -322,10 +319,6 @@ public abstract class CommandManager {
                     );
                 }
 
-                System.out.println("I " + i + " | primary-component: " + primary +
-                        ", node: " + ((primary == null) ? "<null>" : primary.getNode().getName()) +
-                        ", char: '" + reader.current() + "' (@ " + reader.index() + ")");
-
                 // break if we ended
                 if (primary == null) {
                     current = null;
@@ -342,11 +335,11 @@ public abstract class CommandManager {
             /////////////////////////////////////
 
             if (isSuggesting) {
-                System.out.println(
-                        "current: " + (current != null ? current.getName() : "<null>")
-                        + ", last: " + (last != null ? last.getName() : "<null>")
-                        + ", char: '" + reader.current() + "' (@ " + reader.index() + ")"
-                );
+//                System.out.println(
+//                        "current: " + (current != null ? current.getName() : "<null>")
+//                        + ", last: " + (last != null ? last.getName() : "<null>")
+//                        + ", char: '" + reader.current() + "' (@ " + reader.index() + ")"
+//                );
 
                 // no node to complete, suggest
                 // following nodes with last node

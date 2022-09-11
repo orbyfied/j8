@@ -11,10 +11,7 @@ import org.bukkit.util.Vector;
 
 import java.nio.file.Path;
 import java.util.*;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.function.BiPredicate;
-import java.util.function.Function;
+import java.util.function.*;
 
 /**
  * Standard, 'system' parameter types that
@@ -272,6 +269,7 @@ public class ArgumentTypes {
     }
 
     public static final String KEY_PROVIDER_OPTION = "key_provider";
+    public static final String SUGGESTER_OPTION    = "suggester";
 
     /**
      * Base 10 number suggestions.
@@ -411,16 +409,9 @@ public class ArgumentTypes {
             }),
             (context, builder, s) -> builder.append("\"").append(s).append("\""),
             ((CompleterFunc) (ctx, reader, acc) -> {
-                if (reader.current() == '"') {
-                    for (char i = 0; i < 100; i++)
-                        acc.suggest(i);
-
-                    reader.next();
-                    reader.collect(c -> c != '"', 1);
-                    return;
-                }
-
-                reader.collect(c -> c != ' ');
+                ctx.<Consumer<SuggestionAccumulator>>getOption(SUGGESTER_OPTION).ifPresent(
+                        k -> k.accept(acc)
+                );
             })
     );
 
