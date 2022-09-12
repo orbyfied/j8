@@ -2,6 +2,7 @@ package j8_util.math.expr;
 
 import net.orbyfied.j8.tests.Benchmarks;
 import net.orbyfied.j8.util.math.expr.*;
+import net.orbyfied.j8.util.math.expr.error.LocatedException;
 import org.junit.jupiter.api.Test;
 
 import java.util.Scanner;
@@ -22,7 +23,11 @@ public class SimpleExpressionTests {
             // evaluate
             return parser.getAstNode().evaluate(ctx);
         } catch (Exception e) {
-            System.err.println(e.getClass().getSimpleName() + ": " + e.getMessage());
+            System.out.println("\u001B[31m" + e.getClass().getSimpleName() + ": " + e.getMessage() + "\u001B[0m");
+            StringLocation loc;
+            if (e instanceof LocatedException le && (loc = le.getLocation()) != null) {
+                System.out.println("\u001B[31m  " + loc.toStringFancy(true) + "\u001B[0m");
+            }
         }
 
         return null;
@@ -57,7 +62,8 @@ public class SimpleExpressionTests {
 
         // create context
         Context global = Context.newDefaultGlobal();
-        ExpressionParser parser = new ExpressionParser();
+        ExpressionParser parser = new ExpressionParser()
+                .inFile("<stdin>");
 
         global.setValue("exit", ExpressionFunction.make((ctx, values) -> {
             exit.set(true);
@@ -94,7 +100,7 @@ public class SimpleExpressionTests {
 
             // print evaluated
             System.out.println("|   " + (t2 - t1) + " ns (" + (t2 - t1) / 1_000_000 + " ms)");
-            System.out.println("| = " + val);
+            System.out.println("| = \u001B[33m" + val + "\u001B[0m");
         }
     }
 

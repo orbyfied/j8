@@ -28,13 +28,20 @@ public class CallNode extends ExpressionNode {
         // get function
         ExpressionValue<?> fn = func.evaluate(context);
         if (fn.getType() != ExpressionValue.Type.FUNCTION)
-            throw new ExprInterpreterException("attempt to call a " + fn.getType().getName() + " value");
+            throw new ExprInterpreterException("attempt to call a " + fn.getType().getName() + " value")
+                    .located(getLocation());
 
         // evaluate function
-        return func.evaluate(context)
-                .checkType(ExpressionValue.Type.FUNCTION)
-                .getValueAs(ExpressionFunction.class)
-                .call(context, paramValues);
+        try {
+            return func.evaluate(context)
+                    .checkType(ExpressionValue.Type.FUNCTION)
+                    .getValueAs(ExpressionFunction.class)
+                    .call(context, paramValues);
+        } catch (ExprInterpreterException e) {
+            if (e.getLocation() == null)
+                e.located(getLocation());
+            throw e;
+        }
     }
 
     @Override

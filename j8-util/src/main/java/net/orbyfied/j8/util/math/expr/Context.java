@@ -5,6 +5,7 @@ import net.orbyfied.j8.util.math.expr.error.ExprInterpreterException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Stack;
 import java.util.function.Function;
 
 /**
@@ -58,6 +59,11 @@ public class Context extends ExpressionValue<HashMap<?, ?>> {
      * The global values.
      */
     Map<ExpressionValue<?>, ExpressionValue<?>> values;
+
+    /**
+     * The call stack.
+     */
+    public Stack<ExpressionNode> callStack = new Stack<>();
 
     public Context getGlobal() {
         return global;

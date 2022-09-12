@@ -61,8 +61,28 @@ public class StringLocation {
         return "(" + startIndex + ":" + endIndex + ") in " + fn;
     }
 
-    public String toStringFancy() {
-        return toString();
+    public String toStringFancy(boolean format) {
+        StringBuilder b = new StringBuilder();
+        b.append("\u001B[31m (").append(startIndex).append(":").append(endIndex).append(") in ")
+                .append(fn).append("\u001B[0m");
+
+        final int off = 6;
+        final int l   = str.length();
+
+        int ss = Math.max(0, Math.min(l, startIndex - off));
+        int se = Math.max(0, Math.min(l, startIndex));
+        int bs = Math.max(0, Math.min(l, startIndex));
+        int be = Math.max(0, Math.min(l, endIndex)) + 1;
+        int es = Math.max(0, Math.min(l, endIndex + 1));
+        int ee = Math.max(0, Math.min(l, endIndex + off));
+
+        b
+                .append(" \u001B[0m\u001B[90m...")
+                .append("\u001B[0m\u001B[37m").append(str.substring(ss, se))
+                .append("\u001B[0m\u001B[31m\u001B[4m").append(str.substring(bs, be))
+                .append("\u001B[0m\u001B[37m").append(str.substring(es, ee))
+                .append("\u001B[0m\u001B[90m...");
+        return b.toString();
     }
 
 }

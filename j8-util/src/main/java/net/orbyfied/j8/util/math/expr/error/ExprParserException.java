@@ -29,12 +29,4 @@ public class ExprParserException extends RuntimeException implements LocatedExce
         return this;
     }
 
-    @Override
-    public String getMessage() {
-        StringBuilder b = new StringBuilder();
-        if (loc != null)
-            b.append(loc.toStringFancy()).append(" ");
-        b.append(super.getMessage());
-        return b.toString();
-    }
 }

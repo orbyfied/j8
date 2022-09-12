@@ -119,7 +119,8 @@ public class ExpressionParser {
             }
 
             // throw error
-            throw new ExprParserException("unknown symbol while lexing: '" + c + "' (i: " + strReader.index() + ")");
+            throw new ExprParserException("unknown symbol while tokenizing")
+                    .located(new StringLocation(fn, strReader, strReader.index(), strReader.index()));
         }
     }
 
@@ -254,9 +255,12 @@ public class ExpressionParser {
         final ExpressionNode body = node$Expr();
         // create node
         return new ConstantNode(ExpressionFunction.make((ctx, args) -> {
+            // create child context
             Context c = ctx.child();
+            // check args
             if (args.length < paramNames.size())
                 throw new ExprInterpreterException("Expected " + paramNames.size() + " parameters, got " + args.length);
+            // set args in context
             int l = args.length;
             for (int i = 0; i < l; i++)
                 c.setValueStrict(
@@ -264,7 +268,7 @@ public class ExpressionParser {
                         args[i]
                 );
 
-            // call expression
+            // invoke expression
             return body.evaluate(c);
         }));
     }
@@ -311,18 +315,23 @@ public class ExpressionParser {
                     tokenReader.next();
                     if (tokenReader.current().type != Token.Type.IDENTIFIER)
                         throw new ExprParserException("expected identifier");
-                    String id = tokenReader.current().getValueAs();
+                    Token<?> idTok = tokenReader.current();
+                    String id = idTok.getValueAs();
 
                     // update index node
-                    indexNode = new IndexNode(indexNode,
-                            new ConstantNode(new ExpressionValue<>(ExpressionValue.Type.STRING, id)));
+                    indexNode = (IndexNode) new IndexNode(indexNode,
+                            new ConstantNode(new ExpressionValue<>(ExpressionValue.Type.STRING, id))
+                            .located(idTok.loc))
+                            .located(tk1.loc);
                 }
 
-                rnode = indexNode.located(StringLocation.cover(tko.loc, indexNode.index.loc));
+                rnode = indexNode;
 
                 // check function call
                 if (tokenReader.current() != null &&
                         tokenReader.current().type == Token.Type.LEFT_PARENTHESIS) {
+                    StringLocation sl = tokenReader.current().loc;
+
                     // collect parameters
                     List<ExpressionNode> parameters = new ArrayList<>();
                     Token<?> t1;
@@ -339,11 +348,12 @@ public class ExpressionParser {
                         tokenReader.prev();
                     }
 
+                    // return call node
+                    rnode = new CallNode(indexNode, parameters).located(StringLocation
+                            .cover(sl, tokenReader.current().loc));
+
                     // advance past right parenthesis
                     tokenReader.next();
-
-                    // return call node
-                    rnode = new CallNode(indexNode, parameters);
                 }
 
                 if (tokenReader.current() != null &&
@@ -422,18 +432,16 @@ public class ExpressionParser {
      * ------ API ------
      */
 
-    public ExpressionParser reset() {
-        this.tokens  = new ArrayList<>();
-        this.astNode = null;
+    public ExpressionParser resetParsed() {
+        this.tokens    = new ArrayList<>();
+        this.astNode   = null;
         this.strReader = null;
-        this.fn = null;
         return this;
     }
 
     public ExpressionParser forString(String name) {
-        reset();
+        resetParsed();
         this.strReader = new StringReader(name, 0);
-        this.fn = "<in>";
         return this;
     }
 
