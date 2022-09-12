@@ -5,7 +5,6 @@ import net.orbyfied.j8.util.math.expr.ExpressionFunction;
 import net.orbyfied.j8.util.math.expr.ExpressionNode;
 import net.orbyfied.j8.util.math.expr.ExpressionValue;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class CallNode extends ExpressionNode {

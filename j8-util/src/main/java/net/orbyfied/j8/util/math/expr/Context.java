@@ -1,13 +1,16 @@
 package net.orbyfied.j8.util.math.expr;
 
+import net.orbyfied.j8.util.math.expr.error.ExprInterpreterException;
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Function;
 
 /**
  *
  */
-public class Context {
+public class Context extends ExpressionValue<HashMap<?, ?>> {
 
     public static Context newGlobal() {
         Context ctx = new Context(null, null);
@@ -25,8 +28,10 @@ public class Context {
     //////////////////////////////////////////
 
     protected Context(Context parent, Context global) {
+        super(Type.TABLE, new HashMap<>());
         this.parent = parent;
         this.global = global;
+        this.values = getValueAs();
     }
 
     /**
@@ -89,13 +94,23 @@ public class Context {
 
     /////////////////////////////////////
 
+    private static ExpressionValue<?> makeDD(Function<Double, Double> func) {
+        return ExpressionFunction.make(args -> {
+            if (args.length < 1)
+                throw new ExprInterpreterException("expected double argument");
+            return ExpressionValue.ofDouble(func.apply(args[0]
+                    .checkType(ExpressionValue.Type.NUMBER)
+                    .getValueAs()));
+        });
+    }
+
     public static Context openLibs(Context context) {
 
         /* --------- Math ----------- */
 
         ExpressionValue<?> tMath = ExpressionValue.newTable();
 
-        tMath.tableSet("avg", ExpressionFunction.make(args -> {
+        context.tableSet("avg", ExpressionFunction.make(args -> {
             double n = 0;
             int l = args.length;
             for (int i = 0; i < l; i++)
@@ -105,11 +120,10 @@ public class Context {
             return ExpressionValue.ofDouble(n / l);
         }));
 
-        tMath.tableSet("sqrt", ExpressionFunction.make(args -> {
-            return ExpressionValue.ofDouble(Math.sqrt(args[0]
-                    .checkType(ExpressionValue.Type.NUMBER)
-                    .getValueAs(Double.class)));
-        }));
+        context.tableSet("sqrt", makeDD(Math::sqrt));
+        context.tableSet("sin", makeDD(Math::sin));
+        context.tableSet("cos", makeDD(Math::cos));
+        context.tableSet("tan", makeDD(Math::tan));
 
         context.setValue("math", tMath);
 

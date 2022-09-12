@@ -8,23 +8,16 @@ import org.junit.jupiter.api.Test;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferStrategy;
-import java.io.BufferedReader;
-import java.io.Console;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.security.Key;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Scanner;
 
 public class SimpleGraphingTest {
 
-    static final int W = 800;
-    static final int H = 600;
+    static final int W = 1280;
+    static final int H = 720;
 
     // gui stuff
     JFrame frame;
@@ -53,10 +46,36 @@ public class SimpleGraphingTest {
     volatile double camy;
     volatile double cams = 1;
 
+    int statusMessageTime;
+    String statusMessage;
+    Color statusColor;
+    StringBuilder exprStrBuilder;
+
+    boolean showDebug;
+
+    void endText() {
+        statusMessageTime = 100;
+
+        // parse
+        try {
+            node = parser.forString(exprStrBuilder.toString())
+                    .lex()
+                    .parse()
+                    .getAstNode();
+
+            statusColor = Color.GREEN;
+            statusMessage = "Successfully parsed.";
+        } catch (Exception e) {
+            statusColor = Color.RED;
+            statusMessage = e.getClass().getSimpleName() + ": " + e.getMessage();
+        }
+    }
+
     void init() {
         // init math
         parser = new ExpressionParser();
         ctx = Context.newDefaultGlobal();
+//        cache = new double[W];
 
         // init gui
         try {
@@ -71,13 +90,50 @@ public class SimpleGraphingTest {
 
         frame.add(canvas);
 
-        frame.setPreferredSize(new Dimension(W, H));
-        frame.pack();
-        frame.setVisible(true);
-
         frame.addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
+                int k = e.getKeyCode();
+
+                if (k == /* F3 */ 114) {
+                    showDebug = !showDebug;
+                    return;
+                }
+
+                if (k == /* enter */ 10) {
+                    // enter text mode
+                    if (exprStrBuilder == null) {
+                        exprStrBuilder = new StringBuilder();
+                        return;
+                    } else {
+                        // end text mode
+                        endText();
+                        exprStrBuilder = null;
+                        return;
+                    }
+                }
+
+                if (exprStrBuilder != null && k == /* esc */ 27) {
+                    // exit text mode
+                    exprStrBuilder = null;
+                    return;
+                }
+
+                if (exprStrBuilder != null) {
+                    switch (k) {
+                        case /* backspace */ 8 -> {
+                            if (exprStrBuilder.length() == 0)
+                                break;
+                            exprStrBuilder.delete(exprStrBuilder.length() - 1, exprStrBuilder.length() + 1);
+                        }
+
+                        // ignore
+                        case /* shift */ 16, /* ctrl */ 17 -> { /* ignore */ }
+                        default -> exprStrBuilder.append(e.getKeyChar());
+                    }
+
+                }
+
                 synchronized (keys) {
                     keys.add(e.getKeyChar());
                 }
@@ -91,22 +147,30 @@ public class SimpleGraphingTest {
             }
         });
 
+        frame.setPreferredSize(new Dimension(W, H));
+        frame.setTitle("Graphing Calculator");
+        frame.pack();
+        frame.setVisible(true);
+
         // init rendering
         canvas.createBufferStrategy(2);
         bs = canvas.getBufferStrategy();
+
+        camx = W / 2f;
+        camy = H / 2f;
     }
 
-    void redraw(Graphics2D g) {
+    void redrawLine(Graphics2D g) {
         g.setStroke(new BasicStroke(3));
 
         double h2 = H / 2f;
         double w2 = W / 2f;
 
         if (node != null) {
-            int lx = 0;
-            int ly = 0;
+            int lx = -1;
+            int ly = -1;
             double xv = 1 / cams;
-            for (double x = camx; x < camx + W; x += xv) {
+            for (double x = camx - w2; x < camx - w2 + W; x += xv) {
                 // set up context
                 Context local = ctx.child()
                         .setValue("x", x);
@@ -119,10 +183,10 @@ public class SimpleGraphingTest {
 
                 // plot point
                 int sx = (int)(x  + w2 - camx);
-                int sy = (int)(dy - h2 - camy);
+                int sy = (int)(dy - h2 + camy);
                 g.setColor(Color.BLACK);
 //                g.fillOval(x - 3, tny - 3, 6, 6);
-                g.drawLine(sx, sy, lx, ly);
+                g.drawLine(sx, sy, lx == -1 ? sx : lx, ly == -1 ? sy : ly);
 
                 // update last
                 lx = sx;
@@ -131,23 +195,36 @@ public class SimpleGraphingTest {
         }
     }
 
-    final BasicStroke st1 = new BasicStroke(1);
+    int tc = 0;
+    float targetFps = 60.0f;
+    float targetSt  = 1f / targetFps;
+    float fps = 0.0f;
+    double elapsedTime = 0.0f;
+
+    final BasicStroke st1  = new BasicStroke(1);
+    final BasicStroke st1b = new BasicStroke(3);
+    final Color gcol = Color.GREEN.darker().darker();
+    final Color tbgc = new Color(0, 0, 0, 120);
+    final Font font = new Font("Sans Serif", Font.PLAIN, 10);
+    final Font txtFont = new Font("Sans Serif", Font.PLAIN, 18);
 
     void mainLoop() {
         final int gw = 32;
         final int gh = 32;
+
+        long t1;
+        long t2;
         while (frame.isVisible() && !close) {
+            // timings
+            t1 = System.currentTimeMillis();
+
             // prepare for render
             Graphics2D g = (Graphics2D) bs.getDrawGraphics();
-            g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+            g.setFont(font);
 
             // clear screen
             g.setColor(Color.WHITE);
             g.fillRect(0, 0, W, H);
-
-            // render
-            redraw(g);
 
             // draw grid
             g.setStroke(st1);
@@ -159,34 +236,93 @@ public class SimpleGraphingTest {
                 double wx = camx + x;
                 for (int y = -cgy; y < my; y += gh) {
                     double wy = -camy + y;
-                    g.setColor(Color.BLACK);
+                    if (y == 0)
+                        g.setStroke(st1b);
+                    g.setColor(Color.LIGHT_GRAY);
                     g.drawLine(0, y, W, y);
-                    g.setColor(Color.GREEN);
-                    g.drawString("y: " + wy, W - 50, y);
+                    g.setStroke(st1);
+                    g.setColor(gcol);
+                    g.drawString("y: " + wy, W - 75, y);
                 }
-                g.setColor(Color.BLACK);
+                if (wx == 0)
+                    g.setStroke(st1b);
+                g.setColor(Color.LIGHT_GRAY);
                 g.drawLine(x, 0, x, H);
-                g.setColor(Color.GREEN);
+                g.setStroke(st1);
+                g.setColor(gcol);
                 g.drawString("x: " + wx, x, H - 50);
+            }
+
+            // render
+            redrawLine(g);
+
+            // render text shit
+            if (statusMessageTime > 0) {
+                statusMessageTime--;
+                g.setFont(txtFont);
+                g.setColor(tbgc);
+                g.fillRect(0, H - 124, W, 24);
+                g.setColor(statusColor);
+                g.drawString(statusMessage, 20, H - 105);
+            }
+
+
+            if (exprStrBuilder != null) {
+                g.setFont(txtFont);
+                g.setColor(tbgc);
+                g.fillRect(0, H - 90, W, 40);
+                g.setColor(Color.WHITE);
+                g.drawString(exprStrBuilder.toString() +
+                        ((tc / 5) % 2 == 0 ? "_" : ""), 20, H - 65);
+            }
+
+            // show debug
+            if (showDebug) {
+                g.setColor(tbgc);
+                g.fillRect(20, 20, 250, 250);
+                g.setColor(Color.WHITE);
+                g.setFont(txtFont);
+                g.drawString("FPS/MAX: " + fps + " / " + targetFps, 25, 40);
+                g.drawString("Elapsed: " + elapsedTime, 25, 55);
             }
 
             // input
             synchronized (keys) {
                 if (keys.contains('w'))
-                    camy += 1.5;
+                    camy += 800 * elapsedTime;
                 if (keys.contains('s'))
-                    camy -= 1.5;
+                    camy -= 800 * elapsedTime;
                 if (keys.contains('a'))
-                    camx -= 1.5;
+                    camx -= 800 * elapsedTime;
                 if (keys.contains('d'))
-                    camx += 1.5;
+                    camx += 800 * elapsedTime;
+                if (keys.contains('i'))
+                    cams += 3 * elapsedTime;
+                if (keys.contains('o'))
+                    cams -= 3 * elapsedTime;
+                if (keys.contains('r')) {
+                    camx = W / 2f;
+                    camy = H / 2f;
+                    cams = 1f;
+                }
             }
 
             // show
             bs.show();
 
-            // sleep
-            sleep(10);
+            // timings
+            t2 = System.currentTimeMillis();
+            long t = t2 - t1;
+            double elapsed = t / 1000f;
+
+            // update values
+            elapsedTime = elapsed;
+            fps = (float) Math.min(targetFps, 1f / elapsed);
+            // sleep tick
+            if (elapsed < targetSt)
+                sleep((int) ((targetSt - elapsed) * 1000));
+
+            tc++;
         }
 
         close = true;
@@ -198,7 +334,11 @@ public class SimpleGraphingTest {
     void test() {
         init();
 
-        node = parser.forString("x")
+        String str;
+        str = "sin(x / 20) * 100";
+//        str = "(x/10) ^ 3";
+
+        node = parser.forString(str)
                 .lex()
                 .parse()
                 .getAstNode();

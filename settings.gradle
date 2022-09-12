@@ -12,6 +12,8 @@ pluginManagement {
 rootProject.name = "j8"
 
 // modules
+include 'testSrc'
+
 include 'j8-util'
 include 'j8s-util'
 include 'j8s-command'
@@ -21,4 +23,5 @@ include 'j8s-config'
 include 'test-plugin-1_18_2'
 include 'j8-util-bukkit'
 include 'j8-text'
+include 'testSrc'
 
