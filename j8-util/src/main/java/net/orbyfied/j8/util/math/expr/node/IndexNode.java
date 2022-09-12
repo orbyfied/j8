@@ -3,6 +3,7 @@ package net.orbyfied.j8.util.math.expr.node;
 import net.orbyfied.j8.util.math.expr.Context;
 import net.orbyfied.j8.util.math.expr.ExpressionNode;
 import net.orbyfied.j8.util.math.expr.ExpressionValue;
+import net.orbyfied.j8.util.math.expr.error.ExprInterpreterException;
 
 import java.util.HashMap;
 
@@ -18,16 +19,23 @@ public class IndexNode extends ExpressionNode {
 
     @Override
     public ExpressionValue<?> evaluate(Context context) {
+        // evaluate source
         ExpressionNode src = this.src;
-        ExpressionValue<?> val;
         ExpressionValue<?> srcVal;
         if (src == null)
             srcVal = context;
         else
             srcVal = src.evaluate(context);
+
+        // evaluate key
         ExpressionValue<?> indexVal = index.evaluate(context);
-        val = srcVal.structIndex(index.evaluate(context));
-        return val;
+
+        // index
+        try {
+            return srcVal.structIndex(indexVal);
+        } catch (ExprInterpreterException e) {
+            throw e.located(getLocation());
+        }
     }
 
     @Override

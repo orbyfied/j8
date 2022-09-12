@@ -22,7 +22,7 @@ public class SimpleExpressionTests {
             // evaluate
             return parser.getAstNode().evaluate(ctx);
         } catch (Exception e) {
-            e.printStackTrace();
+            System.err.println(e.getClass().getSimpleName() + ": " + e.getMessage());
         }
 
         return null;

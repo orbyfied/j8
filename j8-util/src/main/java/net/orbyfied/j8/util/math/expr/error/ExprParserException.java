@@ -2,7 +2,7 @@ package net.orbyfied.j8.util.math.expr.error;
 
 import net.orbyfied.j8.util.math.expr.StringLocation;
 
-public class ExprParserException extends RuntimeException {
+public class ExprParserException extends RuntimeException implements LocatedException {
 
     StringLocation loc;
 
@@ -18,6 +18,12 @@ public class ExprParserException extends RuntimeException {
         super(cause);
     }
 
+    @Override
+    public StringLocation getLocation() {
+        return loc;
+    }
+
+    @Override
     public ExprParserException located(StringLocation loc) {
         this.loc = loc;
         return this;
@@ -27,7 +33,7 @@ public class ExprParserException extends RuntimeException {
     public String getMessage() {
         StringBuilder b = new StringBuilder();
         if (loc != null)
-            b.append("(").append(loc.getStartIndex()).append(" : ").append(loc.getEndIndex()).append(") ");
+            b.append(loc.toStringFancy()).append(" ");
         b.append(super.getMessage());
         return b.toString();
     }

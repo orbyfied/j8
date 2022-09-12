@@ -1,5 +1,7 @@
 package net.orbyfied.j8.util.math.expr;
 
+import net.orbyfied.j8.util.StringReader;
+
 public class Token<T> {
 
     public enum Type {
@@ -55,7 +57,7 @@ public class Token<T> {
     // does not require a value
     T value;
     // the location in the string
-    StringLocation loc;
+    StringLocation loc = StringLocation.EMPTY;
 
     // internal
     boolean hasVal = false;
@@ -72,6 +74,10 @@ public class Token<T> {
     public Token<T> located(StringLocation loc) {
         this.loc = loc;
         return this;
+    }
+
+    public Token<?> located(String fn, StringReader strReader, int si, int index) {
+        return located(new StringLocation(fn, strReader, si, index));
     }
 
     public StringLocation getLocation() {

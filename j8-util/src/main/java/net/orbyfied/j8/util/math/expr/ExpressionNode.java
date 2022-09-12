@@ -44,9 +44,20 @@ public abstract class ExpressionNode {
 
     // the node type
     final Type type;
+    // the location, optional
+    StringLocation loc = StringLocation.EMPTY;
 
     public Type getType() {
         return type;
+    }
+
+    public ExpressionNode located(StringLocation loc) {
+        this.loc = loc;
+        return this;
+    }
+
+    public StringLocation getLocation() {
+        return loc;
     }
 
     public abstract ExpressionValue<?> evaluate(Context context);

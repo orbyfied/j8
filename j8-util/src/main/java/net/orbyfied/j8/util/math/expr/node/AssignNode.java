@@ -3,6 +3,8 @@ package net.orbyfied.j8.util.math.expr.node;
 import net.orbyfied.j8.util.math.expr.Context;
 import net.orbyfied.j8.util.math.expr.ExpressionNode;
 import net.orbyfied.j8.util.math.expr.ExpressionValue;
+import net.orbyfied.j8.util.math.expr.error.ExprInterpreterException;
+import net.orbyfied.j8.util.math.expr.error.LocatedException;
 
 public class AssignNode extends ExpressionNode {
 
@@ -37,7 +39,11 @@ public class AssignNode extends ExpressionNode {
             src = source.evaluate(context);
 
         // get destination
-        src.structAssign(idx, val);
+        try {
+            src.structAssign(idx, val);
+        } catch (ExprInterpreterException e) {
+            throw e.located(getLocation());
+        }
 
         // return value
         return val;

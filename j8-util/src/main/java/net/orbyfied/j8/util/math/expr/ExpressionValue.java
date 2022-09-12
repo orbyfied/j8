@@ -190,7 +190,7 @@ public class ExpressionValue<T> {
             case ARRAY  -> (ExpressionValue<T>) getValueAs(ArrayList.class).get(key.getValueAs(Double.class).intValue());
             case STRING -> (ExpressionValue<T>) new ExpressionValue<>(Type.STRING, "" +
                     getValueAs(String.class).charAt(key.getValueAs(Double.class).intValue()));
-            default -> (ExpressionValue<T>) NIL;
+            default -> { throw new ExprInterpreterException("attempt to index a " + type.name + " value"); }
         };
     }
 
@@ -205,6 +205,7 @@ public class ExpressionValue<T> {
                 else
                     list.set(idx, value);
             }
+            default -> { throw new ExprInterpreterException("attempt to index a " + type + " value"); }
         };
     }
 

@@ -4,6 +4,7 @@ import net.orbyfied.j8.util.math.expr.Context;
 import net.orbyfied.j8.util.math.expr.ExpressionFunction;
 import net.orbyfied.j8.util.math.expr.ExpressionNode;
 import net.orbyfied.j8.util.math.expr.ExpressionValue;
+import net.orbyfied.j8.util.math.expr.error.ExprInterpreterException;
 
 import java.util.List;
 
@@ -23,6 +24,11 @@ public class CallNode extends ExpressionNode {
         ExpressionValue<?>[] paramValues = new ExpressionValue[params.size()];
         for (int i = 0; i < params.size(); i++)
             paramValues[i] = params.get(i).evaluate(context);
+
+        // get function
+        ExpressionValue<?> fn = func.evaluate(context);
+        if (fn.getType() != ExpressionValue.Type.FUNCTION)
+            throw new ExprInterpreterException("attempt to call a " + fn.getType().getName() + " value");
 
         // evaluate function
         return func.evaluate(context)

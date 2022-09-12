@@ -31,6 +31,9 @@ public class ExpressionParser {
     // the string reader
     StringReader strReader;
 
+    // the file name
+    String fn = "<in>";
+
     void tokenize() {
         // basic state checks
         if (strReader == null)
@@ -38,6 +41,7 @@ public class ExpressionParser {
 
         // tokenize
         char c;
+        int si;
         while ((c = strReader.current()) != StringReader.DONE) {
             // skip whitespace
             if (isWhitespace(c)) {
@@ -47,8 +51,10 @@ public class ExpressionParser {
 
             // collect number literal
             if (isDigit(c, 10)) {
+                si = strReader.index();
+
                 // append token
-                tokens.add(collectNumberLiteral());
+                tokens.add(collectNumberLiteral().located(fn, strReader, si, strReader.index()));
 
                 // continue, dont advance to next character
                 // because the collection of the literal
@@ -57,6 +63,7 @@ public class ExpressionParser {
             }
 
             // parse operator
+            si = strReader.index();
             Operator op = null;
             switch (c) {
                 case '+' -> op = Operator.PLUS;
@@ -67,13 +74,15 @@ public class ExpressionParser {
             }
 
             if (op != null) {
-                tokens.add(new Token<>(Token.Type.OPERATOR, op));
+                tokens.add(new Token<>(Token.Type.OPERATOR, op)
+                        .located(new StringLocation(fn, strReader, si, strReader.index())));
                 // continue
                 strReader.next();
                 continue;
             }
 
             // parse other symbols
+            si = strReader.index();
             Token<?> tk = null;
             switch (c) {
                 case '(' -> tk = new Token<>(Token.Type.LEFT_PARENTHESIS);
@@ -84,7 +93,8 @@ public class ExpressionParser {
             }
 
             if (tk != null) {
-                tokens.add(tk);
+                tokens.add(tk
+                        .located(new StringLocation(fn, strReader, si, strReader.index())));
                 // continue
                 strReader.next();
                 continue;
@@ -92,15 +102,17 @@ public class ExpressionParser {
 
             // parse identifiers and keywords
             if (isFirstIdChar(c)) {
+                si = strReader.index();
+
                 // collect identifier token
                 Token<?> itk = collectIdentifier();
                 // switch for keywords
-                tokens.add(switch (itk.getValueAs(String.class)) {
+                tokens.add((switch (itk.getValueAs(String.class)) {
                     // check keywords
                     case "func" -> new Token<>(Token.Type.KW_FUNC);
                     // add identifier
                     default -> itk;
-                });
+                }).located(new StringLocation(fn, strReader, si, strReader.index() - 1)));
                 // continue, no need to advance
                 // because collection already did
                 continue;
@@ -169,7 +181,7 @@ public class ExpressionParser {
                 v = Long.parseLong(ns, radix);
         } catch (NumberFormatException e) {
             throw new ExprParserException("NumberFormatError: " + e.getMessage())
-                    .located(new StringLocation(si, strReader.index() - 1));
+                    .located(new StringLocation(fn, strReader.getString(), si, strReader.index() - 1));
         }
 
         // return
@@ -211,7 +223,7 @@ public class ExpressionParser {
             Operator op = tok.getValueAs();
             tokenReader.next();
             ExpressionNode right = supplier.get();
-            left = new BinOpNode(op, left, right);
+            left = new BinOpNode(op, left, right).located(StringLocation.cover(left.loc, right.loc));
         }
 
         // return
@@ -261,10 +273,11 @@ public class ExpressionParser {
         // parse function
         if (tokenReader.current() != null &&
                 tokenReader.current().type == Token.Type.KW_FUNC) {
+            StringLocation s = tokenReader.current().loc;
             // advance to parameters
             tokenReader.next();
             // make and return func
-            return val$FuncDef();
+            return val$FuncDef().located(StringLocation.cover(s, tokenReader.peek(-1).loc));
         }
 
         return node$BinOp(this::node$Term, Set.of(Operator.PLUS, Operator.MINUS));
@@ -290,6 +303,7 @@ public class ExpressionParser {
                 ExpressionNode rnode = null;
 
                 // check for more
+                Token<?> tko = tokenReader.current();
                 Token<?> tk1;
                 while ((tk1 = tokenReader.next()) != null &&
                         tk1.getType() == Token.Type.DOT) {
@@ -304,7 +318,7 @@ public class ExpressionParser {
                             new ConstantNode(new ExpressionValue<>(ExpressionValue.Type.STRING, id)));
                 }
 
-                rnode = indexNode;
+                rnode = indexNode.located(StringLocation.cover(tko.loc, indexNode.index.loc));
 
                 // check function call
                 if (tokenReader.current() != null &&
@@ -371,7 +385,8 @@ public class ExpressionParser {
         }
 
         // invalid value
-        throw new ExprParserException("Invalid Token: " + tokenReader.current() + ", expected NUMBER_LITERAL");
+        throw new ExprParserException("Invalid Token: " + tokenReader.current() + ", expected NUMBER_LITERAL, " +
+                "OPERATOR or IDENTIFIER");
     }
 
     private ExpressionNode node$Number() {
@@ -411,12 +426,19 @@ public class ExpressionParser {
         this.tokens  = new ArrayList<>();
         this.astNode = null;
         this.strReader = null;
+        this.fn = null;
         return this;
     }
 
     public ExpressionParser forString(String name) {
         reset();
         this.strReader = new StringReader(name, 0);
+        this.fn = "<in>";
+        return this;
+    }
+
+    public ExpressionParser inFile(String fn) {
+        this.fn = fn;
         return this;
     }
 
