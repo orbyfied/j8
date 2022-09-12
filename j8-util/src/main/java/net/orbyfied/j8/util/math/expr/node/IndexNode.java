@@ -13,20 +13,20 @@ public class IndexNode extends ExpressionNode {
         this.index = key;
     }
 
-    ExpressionNode src;
-    ExpressionNode index;
+    public ExpressionNode src;
+    public ExpressionNode index;
 
     @Override
     public ExpressionValue<?> evaluate(Context context) {
         ExpressionNode src = this.src;
         ExpressionValue<?> val;
+        ExpressionValue<?> srcVal;
         if (src == null)
-            val = context.getValue(index.evaluate(context));
+            srcVal = context;
         else
-            val = (ExpressionValue<?>) src.evaluate(context)
-                    .checkType(ExpressionValue.Type.TABLE)
-                    .getValueAs(HashMap.class)
-                    .get(index.evaluate(context));
+            srcVal = src.evaluate(context);
+        ExpressionValue<?> indexVal = index.evaluate(context);
+        val = srcVal.structIndex(index.evaluate(context));
         return val;
     }
 

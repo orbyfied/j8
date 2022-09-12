@@ -12,8 +12,11 @@ public class Token<T> {
         RIGHT_PARENTHESIS("right_paren", null, false),
         COMMA("comma", null, false),
         DOT("dot", null, false),
+        ASSIGN("assign", null, false),
 
-        IDENTIFIER("identifier", String.class, true);
+        IDENTIFIER("identifier", String.class, true),
+
+        KW_FUNC("keyword_func", null, false);
 
         // the name of this token
         final String name;

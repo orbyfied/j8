@@ -27,6 +27,16 @@ public class Context extends ExpressionValue<HashMap<?, ?>> {
 
     //////////////////////////////////////////
 
+    @Override
+    public ExpressionValue<HashMap<?, ?>> structIndex(ExpressionValue<?> key) {
+        return getValueStrict(key);
+    }
+
+    @Override
+    public void structAssign(ExpressionValue<?> key, ExpressionValue<?> value) {
+        setValueStrict(key, value);
+    }
+
     protected Context(Context parent, Context global) {
         super(Type.TABLE, new HashMap<>());
         this.parent = parent;
@@ -47,7 +57,7 @@ public class Context extends ExpressionValue<HashMap<?, ?>> {
     /**
      * The global values.
      */
-    Map<ExpressionValue<?>, ExpressionValue<?>> values = new HashMap<>();
+    Map<ExpressionValue<?>, ExpressionValue<?>> values;
 
     public Context getGlobal() {
         return global;
@@ -63,6 +73,10 @@ public class Context extends ExpressionValue<HashMap<?, ?>> {
 
     /* ------- Values ------- */
 
+    public Map<ExpressionValue<?>, ExpressionValue<?>> getValues() {
+        return values;
+    }
+
     public <V> ExpressionValue<V> getValue(Object obj) {
         return getValueStrict(ExpressionValue.of(obj));
     }
@@ -75,9 +89,11 @@ public class Context extends ExpressionValue<HashMap<?, ?>> {
         // inquire parent
         if (parent != null) {
             ExpressionValue<?> val;
-            if (!(val = parent.getValue(key)).isNil())
+            if (!(val = parent.getValueStrict(key)).isNil())
                 return (ExpressionValue<V>) val;
         }
+
+//        System.out.println("returning nil for " + key + " from " + this);
 
         // return nil
         return (ExpressionValue<V>) ExpressionValue.NIL;
@@ -95,7 +111,7 @@ public class Context extends ExpressionValue<HashMap<?, ?>> {
     /////////////////////////////////////
 
     private static ExpressionValue<?> makeDD(Function<Double, Double> func) {
-        return ExpressionFunction.make(args -> {
+        return ExpressionFunction.make((ctx, args) -> {
             if (args.length < 1)
                 throw new ExprInterpreterException("expected double argument");
             return ExpressionValue.ofDouble(func.apply(args[0]
@@ -110,7 +126,7 @@ public class Context extends ExpressionValue<HashMap<?, ?>> {
 
         ExpressionValue<?> tMath = ExpressionValue.newTable();
 
-        context.tableSet("avg", ExpressionFunction.make(args -> {
+        context.tableSet("avg", ExpressionFunction.make((ctx, args) -> {
             double n = 0;
             int l = args.length;
             for (int i = 0; i < l; i++)
@@ -129,6 +145,11 @@ public class Context extends ExpressionValue<HashMap<?, ?>> {
 
         /* ------ Return ------- */
         return context;
+    }
+
+    @Override
+    public String toString() {
+        return "(" + (parent != null ? "->" : "") + "Context)";
     }
 
 }

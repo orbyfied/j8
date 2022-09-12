@@ -4,40 +4,97 @@ import net.orbyfied.j8.tests.Benchmarks;
 import net.orbyfied.j8.util.math.expr.*;
 import org.junit.jupiter.api.Test;
 
+import java.util.Scanner;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 public class SimpleExpressionTests {
 
     /* ------------------ 1 --------------------- */
 
-    @Test
-    void test_simpleExpr() {
-        // input string
-        final String str = "sin(5)";
-
-        // prepare global context
-        Context gctx = Context.newDefaultGlobal()
-                .setValue("PI", Math.PI);
-
-        // create parser and lex
-        ExpressionParser parser = new ExpressionParser()
-                .forString(str);
-
+    ExpressionValue<?> eval(ExpressionParser parser,
+              Context ctx,
+              String str) {
         try {
-            parser
+            parser.forString(str)
                     .lex()
                     .parse();
+
+            // evaluate
+            return parser.getAstNode().evaluate(ctx);
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        // print results
-        System.out.println("SOURCE: | " + parser.getStrReader().getString());
-        System.out.println("TOKENS: | " + parser.getTokens());
-        if (parser.getAstNode() != null) {
-            System.out.println("AST:    | " + parser.getAstNode());
-            System.out.println("EVAL:   | " + parser.getAstNode().evaluate(
-                    gctx.child()
-                            .setValue("y", 69)
-            ));
+        return null;
+    }
+
+    @Test
+    void test_simpleExpr() {
+        // input string
+        final String str1 = "f = func(x) x";
+        final String str2 = "f(5)";
+
+        // prepare global context
+        Context global = Context.newDefaultGlobal()
+                .setValue("PI", Math.PI);
+        ExpressionParser parser = new ExpressionParser();
+
+        // evaluate
+        eval(parser, global, str1);
+        eval(parser, global, str2);
+
+    }
+
+    public static void main(String[] args) {
+        new SimpleExpressionTests().test_shell();
+    }
+
+    @Test
+    void test_shell() {
+        // flags
+        AtomicBoolean debug = new AtomicBoolean(false);
+        AtomicBoolean exit  = new AtomicBoolean(false);
+
+        // create context
+        Context global = Context.newDefaultGlobal();
+        ExpressionParser parser = new ExpressionParser();
+
+        global.setValue("exit", ExpressionFunction.make((ctx, values) -> {
+            exit.set(true);
+            return ExpressionValue.NIL;
+        }));
+
+        global.setValue("debug", ExpressionFunction.make((ctx, values) -> {
+            debug.set(!debug.get());
+            return ExpressionValue.NIL;
+        }));
+
+        // input loop
+        Scanner scanner = new Scanner(System.in);
+        while (!exit.get()) {
+            // read input and parse
+            System.out.print("+-> ");
+            String input = scanner.nextLine();
+
+            // evaluate
+            long t1 = System.nanoTime();
+            Context c = global;
+            ExpressionValue<?> val = eval(parser, c, input);
+            long t2 = System.nanoTime();
+
+            // print debug info
+            if (debug.get()) {
+                System.out.println("| \uD83D\uDEE0 SOURCE: | " + parser.getStrReader().getString());
+                System.out.println("| \uD83D\uDEE0 TOKENS: | " + parser.getTokens());
+                if (parser.getAstNode() != null) {
+                    System.out.println("| \uD83D\uDEE0 AST:    | " + parser.getAstNode());
+                    System.out.println("| \uD83D\uDEE0 CTX:    | " + c.getValues());
+                }
+            }
+
+            // print evaluated
+            System.out.println("|   " + (t2 - t1) + " ns (" + (t2 - t1) / 1_000_000 + " ms)");
+            System.out.println("| = " + val);
         }
     }
 
@@ -67,7 +124,7 @@ public class SimpleExpressionTests {
         ExpressionParser parser = new ExpressionParser()
                 .forString(input);
         Context global = (Context) Context.newDefaultGlobal()
-                .tableSet("test", ExpressionFunction.make(args -> args[0]))
+                .tableSet("test", ExpressionFunction.make((ctx, args) -> args[0]))
                 .tableSet("x", Math.random() * 10000);
 
         // perform
@@ -89,7 +146,7 @@ public class SimpleExpressionTests {
         ExpressionParser parser = new ExpressionParser()
                 .forString(input);
         Context global = (Context) Context.newDefaultGlobal()
-                .tableSet("test", ExpressionFunction.make(args -> args[0]))
+                .tableSet("test", ExpressionFunction.make((ctx, args) -> args[0]))
                 .tableSet("x", Math.random() * 10000);
 
         // parse into node

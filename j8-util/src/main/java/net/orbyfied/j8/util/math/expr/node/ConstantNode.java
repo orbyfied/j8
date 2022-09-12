@@ -10,7 +10,7 @@ public class ConstantNode extends ExpressionNode {
         this.value = value;
     }
 
-    ExpressionValue<?> value;
+    public ExpressionValue<?> value;
 
     @Override
     public ExpressionValue<?> evaluate(Context ctx) {

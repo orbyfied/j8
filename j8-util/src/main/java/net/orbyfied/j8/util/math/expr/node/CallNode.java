@@ -28,7 +28,7 @@ public class CallNode extends ExpressionNode {
         return func.evaluate(context)
                 .checkType(ExpressionValue.Type.FUNCTION)
                 .getValueAs(ExpressionFunction.class)
-                .call(paramValues);
+                .call(context, paramValues);
     }
 
     @Override

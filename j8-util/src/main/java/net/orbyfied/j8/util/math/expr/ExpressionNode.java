@@ -25,6 +25,11 @@ public abstract class ExpressionNode {
         INDEX,
 
         /**
+         * Assign.
+         */
+        ASSIGN,
+
+        /**
          * Call value.
          */
         CALL;

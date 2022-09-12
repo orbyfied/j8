@@ -10,6 +10,6 @@ public interface ExpressionFunction {
 
     //////////////////////////////////////
 
-    ExpressionValue<?> call(ExpressionValue<?>[] values);
+    ExpressionValue<?> call(Context ctx, ExpressionValue<?>[] values);
 
 }

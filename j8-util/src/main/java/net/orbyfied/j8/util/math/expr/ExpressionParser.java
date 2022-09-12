@@ -3,6 +3,7 @@ package net.orbyfied.j8.util.math.expr;
 import net.orbyfied.j8.util.Reader;
 import net.orbyfied.j8.util.Sequence;
 import net.orbyfied.j8.util.StringReader;
+import net.orbyfied.j8.util.math.expr.error.ExprInterpreterException;
 import net.orbyfied.j8.util.math.expr.error.ExprParserException;
 import net.orbyfied.j8.util.math.expr.node.*;
 
@@ -79,6 +80,7 @@ public class ExpressionParser {
                 case ')' -> tk = new Token<>(Token.Type.RIGHT_PARENTHESIS);
                 case ',' -> tk = new Token<>(Token.Type.COMMA);
                 case '.' -> tk = new Token<>(Token.Type.DOT);
+                case '=' -> tk = new Token<>(Token.Type.ASSIGN);
             }
 
             if (tk != null) {
@@ -88,10 +90,17 @@ public class ExpressionParser {
                 continue;
             }
 
-            // parse identifier
+            // parse identifiers and keywords
             if (isFirstIdChar(c)) {
-                // collect identifier token and add
-                tokens.add(collectIdentifier());
+                // collect identifier token
+                Token<?> itk = collectIdentifier();
+                // switch for keywords
+                tokens.add(switch (itk.getValueAs(String.class)) {
+                    // check keywords
+                    case "func" -> new Token<>(Token.Type.KW_FUNC);
+                    // add identifier
+                    default -> itk;
+                });
                 // continue, no need to advance
                 // because collection already did
                 continue;
@@ -209,7 +218,55 @@ public class ExpressionParser {
         return left;
     }
 
+    private ConstantNode val$FuncDef() {
+        // collect parameters
+        final List<String> paramNames = new ArrayList<>();
+        Token<?> t1;
+        while ((t1 = tokenReader.current()) != null &&
+                t1.type != Token.Type.RIGHT_PARENTHESIS) {
+            tokenReader.next();
+            if (tokenReader.current() == null)
+                throw new ExprParserException("expected ')' to close function call");
+            if (tokenReader.current().type == Token.Type.RIGHT_PARENTHESIS)
+                break;
+            if (tokenReader.current().type == Token.Type.COMMA)
+                continue;
+
+            // collect parameter
+            paramNames.add(tokenReader.current().getValueAs(String.class));
+        }
+
+        tokenReader.next();
+
+        // parse body expression
+        final ExpressionNode body = node$Expr();
+        // create node
+        return new ConstantNode(ExpressionFunction.make((ctx, args) -> {
+            Context c = ctx.child();
+            if (args.length < paramNames.size())
+                throw new ExprInterpreterException("Expected " + paramNames.size() + " parameters, got " + args.length);
+            int l = args.length;
+            for (int i = 0; i < l; i++)
+                c.setValueStrict(
+                        new ExpressionValue<>(ExpressionValue.Type.STRING, paramNames.get(i)),
+                        args[i]
+                );
+
+            // call expression
+            return body.evaluate(c);
+        }));
+    }
+
     private ExpressionNode node$Expr() {
+        // parse function
+        if (tokenReader.current() != null &&
+                tokenReader.current().type == Token.Type.KW_FUNC) {
+            // advance to parameters
+            tokenReader.next();
+            // make and return func
+            return val$FuncDef();
+        }
+
         return node$BinOp(this::node$Term, Set.of(Operator.PLUS, Operator.MINUS));
     }
 
@@ -230,6 +287,7 @@ public class ExpressionParser {
                 // create identifier node
                 IndexNode indexNode = new IndexNode(null,
                         new ConstantNode(new ExpressionValue<>(ExpressionValue.Type.STRING, tok.getValueAs())));
+                ExpressionNode rnode = null;
 
                 // check for more
                 Token<?> tk1;
@@ -245,6 +303,8 @@ public class ExpressionParser {
                     indexNode = new IndexNode(indexNode,
                             new ConstantNode(new ExpressionValue<>(ExpressionValue.Type.STRING, id)));
                 }
+
+                rnode = indexNode;
 
                 // check function call
                 if (tokenReader.current() != null &&
@@ -269,11 +329,23 @@ public class ExpressionParser {
                     tokenReader.next();
 
                     // return call node
-                    return new CallNode(indexNode, parameters);
+                    rnode = new CallNode(indexNode, parameters);
                 }
 
-                // return normal index node
-                return indexNode;
+                if (tokenReader.current() != null &&
+                        tokenReader.current().type == Token.Type.ASSIGN) {
+                    // skip to value token
+                    tokenReader.next();
+
+                    // get value node
+                    ExpressionNode value = node$Expr();
+
+                    // return
+                    rnode = new AssignNode(indexNode.src, indexNode.index, value);
+                }
+
+                // return node
+                return rnode;
             }
 
             // check for unary operator
@@ -346,6 +418,13 @@ public class ExpressionParser {
         reset();
         this.strReader = new StringReader(name, 0);
         return this;
+    }
+
+    public ExpressionValue<?> doString(Context ctx, String str) {
+        forString(str)
+                .lex()
+                .parse();
+        return astNode.evaluate(ctx);
     }
 
     public ExpressionParser lex() {

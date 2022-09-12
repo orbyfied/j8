@@ -2,10 +2,7 @@ package net.orbyfied.j8.util.math.expr;
 
 import net.orbyfied.j8.util.math.expr.error.ExprInterpreterException;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Function;
 
 @SuppressWarnings("unchecked")
@@ -97,7 +94,7 @@ public class ExpressionValue<T> {
          * A callable function.
          * Encapsulates an {@link ExpressionFunction}
          */
-        FUNCTION("function", ExpressionFunction.class, v -> v.getValueAs().toString()),
+        FUNCTION("function", ExpressionFunction.class, v -> "function"),
 
         /**
          * A value representing nothing, the absence of
@@ -183,6 +180,32 @@ public class ExpressionValue<T> {
 
     public void setValue(T val) {
         this.val = val;
+    }
+
+    /* -------- Structures -------- */
+
+    public ExpressionValue<T> structIndex(ExpressionValue<?> key) {
+        return switch (type) {
+            case TABLE  -> (ExpressionValue<T>) getValueAs(HashMap.class).get(key);
+            case ARRAY  -> (ExpressionValue<T>) getValueAs(ArrayList.class).get(key.getValueAs(Double.class).intValue());
+            case STRING -> (ExpressionValue<T>) new ExpressionValue<>(Type.STRING, "" +
+                    getValueAs(String.class).charAt(key.getValueAs(Double.class).intValue()));
+            default -> (ExpressionValue<T>) NIL;
+        };
+    }
+
+    public void structAssign(ExpressionValue<?> key, ExpressionValue<?> value) {
+        switch (type) {
+            case TABLE  -> getValueAs(HashMap.class).put(key, value);
+            case ARRAY  -> {
+                int idx = key.getValueAs(Double.class).intValue();
+                ArrayList<ExpressionValue<?>> list = getValueAs(ArrayList.class);
+                if (idx == list.size())
+                    list.add(value);
+                else
+                    list.set(idx, value);
+            }
+        };
     }
 
     /* -------- Tables --------- */
