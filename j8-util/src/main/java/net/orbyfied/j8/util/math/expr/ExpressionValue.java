@@ -186,7 +186,7 @@ public class ExpressionValue<T> {
 
     public ExpressionValue<T> structIndex(ExpressionValue<?> key) {
         return switch (type) {
-            case TABLE  -> (ExpressionValue<T>) getValueAs(HashMap.class).get(key);
+            case TABLE  -> (ExpressionValue<T>) getValueAs(HashMap.class).getOrDefault(key, NIL);
             case ARRAY  -> (ExpressionValue<T>) getValueAs(ArrayList.class).get(key.getValueAs(Double.class).intValue());
             case STRING -> (ExpressionValue<T>) new ExpressionValue<>(Type.STRING, "" +
                     getValueAs(String.class).charAt(key.getValueAs(Double.class).intValue()));
@@ -219,7 +219,7 @@ public class ExpressionValue<T> {
 
     public ExpressionValue<?> tableGet(Object k) {
         checkType(Type.TABLE);
-        return (ExpressionValue<?>) getValueAs(HashMap.class).get(ExpressionValue.of(k));
+        return (ExpressionValue<?>) getValueAs(HashMap.class).getOrDefault(ExpressionValue.of(k), NIL);
     }
 
     public boolean tableHas(Object k) {

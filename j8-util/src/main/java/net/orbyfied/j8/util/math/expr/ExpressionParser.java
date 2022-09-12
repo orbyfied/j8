@@ -167,7 +167,7 @@ public class ExpressionParser {
         boolean[] hasPoint = new boolean[1];
         int finalRadix = radix;
         String ns = strReader.collect(c1 -> isDigit(c1, finalRadix) || c1 == '.',
-                c1 -> c1 == '_' || c1 == ',',
+                c1 -> c1 == '_',
                 (c1 -> {
                     if (c1 == '.')
                         hasPoint[0] = true;
@@ -343,9 +343,11 @@ public class ExpressionParser {
                         if (tokenReader.current().type == Token.Type.RIGHT_PARENTHESIS)
                             break;
 
+                        if (tokenReader.current().type == Token.Type.COMMA)
+                            tokenReader.next();
+
                         // collect parameter
                         parameters.add(node$Expr());
-                        tokenReader.prev();
                     }
 
                     // return call node

@@ -13,8 +13,9 @@ public class SimpleExpressionTests {
     /* ------------------ 1 --------------------- */
 
     ExpressionValue<?> eval(ExpressionParser parser,
-              Context ctx,
-              String str) {
+                            Context ctx,
+                            String str,
+                            boolean debug) {
         try {
             parser.forString(str)
                     .lex()
@@ -28,26 +29,15 @@ public class SimpleExpressionTests {
             if (e instanceof LocatedException le && (loc = le.getLocation()) != null) {
                 System.out.println("\u001B[31m  " + loc.toStringFancy(true) + "\u001B[0m");
             }
+
+            if (debug) {
+                for (StackTraceElement elem : e.getStackTrace()) {
+                    System.out.println("\u001B[31m   at " + elem + "\u001B[0m");
+                }
+            }
         }
 
         return null;
-    }
-
-    @Test
-    void test_simpleExpr() {
-        // input string
-        final String str1 = "f = func(x) x";
-        final String str2 = "f(5)";
-
-        // prepare global context
-        Context global = Context.newDefaultGlobal()
-                .setValue("PI", Math.PI);
-        ExpressionParser parser = new ExpressionParser();
-
-        // evaluate
-        eval(parser, global, str1);
-        eval(parser, global, str2);
-
     }
 
     public static void main(String[] args) {
@@ -85,7 +75,7 @@ public class SimpleExpressionTests {
             // evaluate
             long t1 = System.nanoTime();
             Context c = global;
-            ExpressionValue<?> val = eval(parser, c, input);
+            ExpressionValue<?> val = eval(parser, c, input, debug.get());
             long t2 = System.nanoTime();
 
             // print debug info

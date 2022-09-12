@@ -66,7 +66,7 @@ public class StringLocation {
         b.append("\u001B[31m (").append(startIndex).append(":").append(endIndex).append(") in ")
                 .append(fn).append("\u001B[0m");
 
-        final int off = 6;
+        final int off = 10;
         final int l   = str.length();
 
         int ss = Math.max(0, Math.min(l, startIndex - off));
