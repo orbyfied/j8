@@ -10,6 +10,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.awt.geom.AffineTransform;
 import java.awt.image.BufferStrategy;
 import java.util.HashSet;
 import java.util.Scanner;
@@ -50,6 +51,7 @@ public class SimpleGraphingTest {
     String statusMessage;
     Color statusColor;
     StringBuilder exprStrBuilder;
+    volatile boolean endTextEntry;
 
     boolean showDebug;
 
@@ -108,14 +110,14 @@ public class SimpleGraphingTest {
                     } else {
                         // end text mode
                         endText();
-                        exprStrBuilder = null;
+                        endTextEntry = true;
                         return;
                     }
                 }
 
                 if (exprStrBuilder != null && k == /* esc */ 27) {
                     // exit text mode
-                    exprStrBuilder = null;
+                    endTextEntry = true;
                     return;
                 }
 
@@ -135,7 +137,9 @@ public class SimpleGraphingTest {
                 }
 
                 synchronized (keys) {
-                    keys.add(e.getKeyChar());
+                    if (exprStrBuilder == null) {
+                        keys.add(e.getKeyChar());
+                    }
                 }
             }
 
@@ -182,11 +186,13 @@ public class SimpleGraphingTest {
                 double dy = value.getValueAs(Double.class);
 
                 // plot point
-                int sx = (int)(x  + w2 - camx);
-                int sy = (int)(dy - h2 + camy);
+                int sx =     (int)(x  + w2 - camx);
+                int sy = H - (int)(dy + h2 - camy);
                 g.setColor(Color.BLACK);
 //                g.fillOval(x - 3, tny - 3, 6, 6);
                 g.drawLine(sx, sy, lx == -1 ? sx : lx, ly == -1 ? sy : ly);
+                if ((int)(x / 4) == 0 && (int)(dy / 4) == 0)
+                    g.fillOval(sx - 4, sy - 4, 8, 8);
 
                 // update last
                 lx = sx;
@@ -207,6 +213,11 @@ public class SimpleGraphingTest {
     final Color tbgc = new Color(0, 0, 0, 120);
     final Font font = new Font("Sans Serif", Font.PLAIN, 10);
     final Font txtFont = new Font("Sans Serif", Font.PLAIN, 18);
+    final AffineTransform xtt = new AffineTransform();
+
+    {
+        xtt.setToRotation(Math.toRadians(270), 5, 5);
+    }
 
     void mainLoop() {
         final int gw = 32;
@@ -215,6 +226,10 @@ public class SimpleGraphingTest {
         long t1;
         long t2;
         while (frame.isVisible() && !close) {
+            // setup
+            final double w2 = W / 2f;
+            final double h2 = H / 2f;
+
             // timings
             t1 = System.currentTimeMillis();
 
@@ -232,11 +247,12 @@ public class SimpleGraphingTest {
             int cgy = (int) (-camy % gh);
             int mx  = (W - cgx) + gw;
             int my  = (H - cgy) + gh;
+
             for (int x = -cgx; x < mx; x += gw) {
-                double wx = camx + x;
+                double wx = camx + x - w2;
                 for (int y = -cgy; y < my; y += gh) {
-                    double wy = -camy + y;
-                    if (y == 0)
+                    double wy = camy + (H - y) - h2;
+                    if ((int)wy == 0)
                         g.setStroke(st1b);
                     g.setColor(Color.LIGHT_GRAY);
                     g.drawLine(0, y, W, y);
@@ -244,7 +260,7 @@ public class SimpleGraphingTest {
                     g.setColor(gcol);
                     g.drawString("y: " + wy, W - 75, y);
                 }
-                if (wx == 0)
+                if ((int)wx == 0)
                     g.setStroke(st1b);
                 g.setColor(Color.LIGHT_GRAY);
                 g.drawLine(x, 0, x, H);
@@ -266,7 +282,6 @@ public class SimpleGraphingTest {
                 g.drawString(statusMessage, 20, H - 105);
             }
 
-
             if (exprStrBuilder != null) {
                 g.setFont(txtFont);
                 g.setColor(tbgc);
@@ -274,6 +289,10 @@ public class SimpleGraphingTest {
                 g.setColor(Color.WHITE);
                 g.drawString(exprStrBuilder.toString() +
                         ((tc / 5) % 2 == 0 ? "_" : ""), 20, H - 65);
+                if (endTextEntry) {
+                    exprStrBuilder = null;
+                    endTextEntry = false;
+                }
             }
 
             // show debug

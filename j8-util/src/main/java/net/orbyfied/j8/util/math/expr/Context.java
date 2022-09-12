@@ -121,9 +121,9 @@ public class Context extends ExpressionValue<HashMap<?, ?>> {
         }));
 
         context.tableSet("sqrt", makeDD(Math::sqrt));
-        context.tableSet("sin", makeDD(Math::sin));
-        context.tableSet("cos", makeDD(Math::cos));
-        context.tableSet("tan", makeDD(Math::tan));
+        context.tableSet("sin",  makeDD(Math::sin));
+        context.tableSet("cos",  makeDD(Math::cos));
+        context.tableSet("tan",  makeDD(Math::tan));
 
         context.setValue("math", tMath);
 
