@@ -13,7 +13,7 @@ public class SimpleExpressionTests {
     @Test
     void test_simpleLiteralTokens() {
         // input string
-        final String str = "math.avg(2, 4, 6)";
+        final String str = "";
 
         // prepare global context
         Context gctx = Context.newDefaultGlobal()
