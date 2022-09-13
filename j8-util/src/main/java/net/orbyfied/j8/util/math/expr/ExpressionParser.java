@@ -303,21 +303,35 @@ public class ExpressionParser {
     }
 
     private ExpressionNode node$Factor() {
-        ExpressionNode node;
-        // check number literal
-        if ((node = node$Number()) != null)
-            return node;
+        // temporary node
+        ExpressionNode tn;
 
+        // return node
+        ExpressionNode node = null;
+
+        // get token
         Token<?> tok = tokenReader.current();
         if (tok != null) {
-            // check for global identifier index
-            if (tok.getType() == Token.Type.IDENTIFIER) {
-                // create identifier node
-                IndexNode indexNode = new IndexNode(new ReturnContextNode(),
-                        new ConstantNode(new ExpressionValue<>(ExpressionValue.Type.STRING, tok.getValueAs())));
-                ExpressionNode rnode = null;
+            // create identifier node
+            ExpressionNode indexNode;
 
-                // check for more
+            // check for unary operator
+            if (tok.getType() == Token.Type.OPERATOR && Set.of(
+                    Operator.MINUS).contains(tok.getValueAs(Operator.class))) {
+                StringLocation loc1 = tokenReader.current().loc;
+                tokenReader.next();
+                if (tokenReader.current() == null)
+                    throw new SyntaxError("expected expression after unary operator")
+                            .located(new StringLocation(loc1, loc1.startIndex + 1, loc1.endIndex + 1));
+                ExpressionNode fac = node$Factor();
+                node = new UnaryOpNode(tok.getValueAs(Operator.class), fac).located(loc1);
+            }
+
+            // check for more
+            if (tok.getType() == Token.Type.IDENTIFIER) {
+                indexNode = new IndexNode(new ReturnContextNode(),
+                        new ConstantNode(new ExpressionValue<>(ExpressionValue.Type.STRING, tok.getValueAs())));
+
                 Token<?> tko = tokenReader.current();
                 Token<?> tk1;
                 while ((tk1 = tokenReader.next()) != null &&
@@ -327,95 +341,93 @@ public class ExpressionParser {
                     tokenReader.next();
                     if (tokenReader.current() == null)
                         throw new SyntaxError("expected identifier as index")
-                        .located(new StringLocation(loc1, loc1.endIndex + 1, loc1.endIndex + 1));
+                                .located(new StringLocation(loc1, loc1.endIndex + 1, loc1.endIndex + 1));
                     if (tokenReader.current().type != Token.Type.IDENTIFIER)
                         throw new SyntaxError("expected identifier as index")
-                            .located(tokenReader.current().loc);
+                                .located(tokenReader.current().loc);
                     Token<?> idTok = tokenReader.current();
                     String id = idTok.getValueAs();
 
                     // update index node
                     indexNode = (IndexNode) new IndexNode(indexNode,
                             new ConstantNode(new ExpressionValue<>(ExpressionValue.Type.STRING, id))
-                            .located(idTok.loc))
+                                    .located(idTok.loc))
                             .located(tk1.loc);
                 }
 
-                rnode = indexNode;
-
-                // check function call
-                if (tokenReader.current() != null &&
-                        tokenReader.current().type == Token.Type.LEFT_PARENTHESIS) {
-                    StringLocation sl = tokenReader.current().loc;
-
-                    // collect parameters
-                    List<ExpressionNode> parameters = new ArrayList<>();
-                    Token<?> t1;
-                    while ((t1 = tokenReader.current()) != null &&
-                            t1.type != Token.Type.RIGHT_PARENTHESIS) {
-                        StringLocation loc1 = t1.loc;
-                        tokenReader.next();
-                        if (tokenReader.current() == null)
-                            throw new SyntaxError("expected ')' to close function call")
-                            .located(new StringLocation(loc1, loc1.endIndex + 1, loc1.endIndex + 1));
-                        if (tokenReader.current().type == Token.Type.RIGHT_PARENTHESIS)
-                            break;
-
-                        if (tokenReader.current().type == Token.Type.COMMA)
-                            tokenReader.next();
-
-                        // collect parameter
-                        parameters.add(node$Expr());
-                    }
-
-                    // return call node
-                    rnode = new CallNode(indexNode, parameters).located(StringLocation
-                            .cover(sl, tokenReader.current().loc));
-
-                    // advance past right parenthesis
-                    tokenReader.next();
-                }
-
-                if (tokenReader.current() != null &&
-                        tokenReader.current().type == Token.Type.ASSIGN) {
-                    // skip to value token
-                    tokenReader.next();
-
-                    // get value node
-                    ExpressionNode value = node$Expr();
-
-                    // return
-                    rnode = new AssignNode(indexNode.src, indexNode.index, value);
-                }
-
-                // return node
-                return rnode;
+                node = indexNode;
             }
 
-            // check for unary operator
-            if (tok.getType() == Token.Type.OPERATOR && Set.of(
-                    Operator.MINUS).contains(tok.getValueAs(Operator.class))) {
-                StringLocation loc1 = tokenReader.current().loc;
-                tokenReader.next();
-                if (tokenReader.current() == null)
-                    throw new SyntaxError("expected expression after unary operator")
-                    .located(new StringLocation(loc1, loc1.startIndex + 1, loc1.endIndex + 1));
-                ExpressionNode fac = node$Factor();
-                return new UnaryOpNode(tok.getValueAs(Operator.class), fac).located(loc1);
-            }
+            // check for number
+            if ((tn = node$Number()) != null)
+                node = tn;
 
             // check for expression
             if (tok.getType() == Token.Type.LEFT_PARENTHESIS) {
                 tokenReader.next();
-                if ((node = node$Expr()) != null) {
+                if ((tn = node$Expr()) != null) {
                     if (tokenReader.current().getType() == Token.Type.RIGHT_PARENTHESIS) {
+                        // register node
+                        node = tn;
+                        // advance past r paren
                         tokenReader.next();
-                        return node;
                     } else {
                         throw new SyntaxError("expected ')' to end expression");
                     }
                 }
             }
+
+            // check function call
+            if (tokenReader.current() != null &&
+                    tokenReader.current().type == Token.Type.LEFT_PARENTHESIS) {
+                StringLocation sl = tokenReader.current().loc;
+
+                // collect parameters
+                List<ExpressionNode> parameters = new ArrayList<>();
+                Token<?> t1;
+                while ((t1 = tokenReader.current()) != null &&
+                        t1.type != Token.Type.RIGHT_PARENTHESIS) {
+                    StringLocation loc1 = t1.loc;
+                    tokenReader.next();
+                    if (tokenReader.current() == null)
+                        throw new SyntaxError("expected ')' to close function call")
+                        .located(new StringLocation(loc1, loc1.endIndex + 1, loc1.endIndex + 1));
+                    if (tokenReader.current().type == Token.Type.RIGHT_PARENTHESIS)
+                        break;
+
+                    if (tokenReader.current().type == Token.Type.COMMA)
+                        tokenReader.next();
+
+                    // collect parameter
+                    parameters.add(node$Expr());
+                }
+
+                // return call node
+                node = new CallNode(node, parameters).located(StringLocation
+                        .cover(sl, tokenReader.current().loc));
+
+                // advance past right parenthesis
+                tokenReader.next();
+            }
+
+            if (tokenReader.current() != null &&
+                    tokenReader.current().type == Token.Type.ASSIGN) {
+                if (!(node instanceof IndexNode))
+                    throw new SyntaxError("invalid indexing for assignment")
+                    .located(tokenReader.current().loc);
+
+                // skip to value token
+                tokenReader.next();
+
+                // get value node
+                ExpressionNode value = node$Expr();
+
+                // return
+                node = new AssignNode(((IndexNode) node).src, ((IndexNode) node).index, value);
+            }
+
+            // return node
+            return node;
         }
 
         // invalid value
@@ -425,7 +437,7 @@ public class ExpressionParser {
 
     private ExpressionNode node$Number() {
         Token<?> tok = tokenReader.current();
-        if (tok.getType() == Token.Type.NUMBER_LITERAL) {
+        if (tok != null && tok.getType() == Token.Type.NUMBER_LITERAL) {
             tokenReader.next();
             return new ConstantNode(
                     new ExpressionValue<>(ExpressionValue.Type.NUMBER, tok.getValueAs(Double.class))
