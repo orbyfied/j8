@@ -21,11 +21,10 @@ public class IndexNode extends ExpressionNode {
     public ExpressionValue<?> evaluate(Context context) {
         // evaluate source
         ExpressionNode src = this.src;
-        ExpressionValue<?> srcVal;
-        if (src == null)
-            srcVal = context;
-        else
-            srcVal = src.evaluate(context);
+        ExpressionValue<?> srcVal = src.evaluate(context);
+        if (srcVal == null || srcVal.isNil())
+            throw new ExprInterpreterException("attempt to index a nil value")
+            .located(getLocation());
 
         // evaluate key
         ExpressionValue<?> indexVal = index.evaluate(context);

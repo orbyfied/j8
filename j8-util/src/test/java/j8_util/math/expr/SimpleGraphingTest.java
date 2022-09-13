@@ -4,6 +4,7 @@ import net.orbyfied.j8.util.math.expr.Context;
 import net.orbyfied.j8.util.math.expr.ExpressionNode;
 import net.orbyfied.j8.util.math.expr.ExpressionParser;
 import net.orbyfied.j8.util.math.expr.ExpressionValue;
+import net.orbyfied.j8.util.math.expr.error.ExprException;
 import org.junit.jupiter.api.Test;
 
 import javax.swing.*;
@@ -170,33 +171,42 @@ public class SimpleGraphingTest {
         double h2 = H / 2f;
         double w2 = W / 2f;
 
+
         if (node != null) {
-            int lx = -1;
-            int ly = -1;
-            double xv = 1 / cams;
-            for (double x = camx - w2; x < camx - w2 + W; x += xv) {
-                // set up context
-                Context local = ctx.child()
-                        .setValue("x", x);
+            try {
+                int lx = -1;
+                int ly = -1;
+                double xv = 1 / cams;
+                for (double x = camx - w2; x < camx - w2 + W; x += xv) {
+                    // set up context
+                    Context local = ctx.child()
+                            .setValue("x", x);
 
-                // evaluate expression
-                ExpressionValue<?> value = node.evaluate(local);
-                if (value.isNil())
-                    continue;
-                double dy = value.getValueAs(Double.class);
+                    // evaluate expression
+                    ExpressionValue<?> value = node.evaluate(local);
+                    if (value.isNil() || value.getType() != ExpressionValue.Type.NUMBER)
+                        continue;
+                    double dy = value.getValueAs(Double.class);
 
-                // plot point
-                int sx =     (int)(x  + w2 - camx);
-                int sy = H - (int)(dy + h2 - camy);
-                g.setColor(Color.BLACK);
+                    // plot point
+                    int sx = (int) (x + w2 - camx);
+                    int sy = H - (int) (dy + h2 - camy);
+                    g.setColor(Color.BLACK);
 //                g.fillOval(x - 3, tny - 3, 6, 6);
-                g.drawLine(sx, sy, lx == -1 ? sx : lx, ly == -1 ? sy : ly);
-                if ((int)(x / 4) == 0 && (int)(dy / 4) == 0)
-                    g.fillOval(sx - 4, sy - 4, 8, 8);
+                    g.drawLine(sx, sy, lx == -1 ? sx : lx, ly == -1 ? sy : ly);
+                    if ((int) (x / 4) == 0 && (int) (dy / 4) == 0)
+                        g.fillOval(sx - 4, sy - 4, 8, 8);
 
-                // update last
-                lx = sx;
-                ly = sy;
+                    // update last
+                    lx = sx;
+                    ly = sy;
+                }
+            } catch (ExprException e) {
+                statusMessageTime = 100;
+                statusColor = Color.RED;
+                statusMessage = e.getClass().getSimpleName() + ": " + e.getMessage();
+                if (e.getLocation() != null)
+                    statusMessage += "\n     " + e.getLocation().toStringFancy(10, false);
             }
         }
     }
@@ -274,12 +284,17 @@ public class SimpleGraphingTest {
 
             // render text shit
             if (statusMessageTime > 0) {
+                String[] sln = statusMessage.split("\n");
                 statusMessageTime--;
                 g.setFont(txtFont);
-                g.setColor(tbgc);
-                g.fillRect(0, H - 124, W, 24);
-                g.setColor(statusColor);
-                g.drawString(statusMessage, 20, H - 105);
+
+                for (int ln = sln.length - 1; ln >= 0; ln--) {
+                    g.setColor(tbgc);
+                    g.fillRect(0, H - 124 - ((sln.length - ln) * 24), W, 24);
+                    g.setColor(statusColor);
+                    g.drawString(sln[ln], 20, H - 105 - ((sln.length - ln) * 24));
+                }
+
             }
 
             if (exprStrBuilder != null) {

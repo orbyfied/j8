@@ -4,7 +4,6 @@ import net.orbyfied.j8.util.math.expr.Context;
 import net.orbyfied.j8.util.math.expr.ExpressionNode;
 import net.orbyfied.j8.util.math.expr.ExpressionValue;
 import net.orbyfied.j8.util.math.expr.error.ExprInterpreterException;
-import net.orbyfied.j8.util.math.expr.error.LocatedException;
 
 public class AssignNode extends ExpressionNode {
 
@@ -14,6 +13,7 @@ public class AssignNode extends ExpressionNode {
 
     public AssignNode(ExpressionNode src, ExpressionNode index, ExpressionNode value) {
         super(Type.ASSIGN);
+        this.source = src;
         this.index  = index;
         this.value  = value;
     }
@@ -32,11 +32,13 @@ public class AssignNode extends ExpressionNode {
             idx = index.evaluate(context);
 
         // decide source
-        ExpressionValue<?> src;
         if (source == null)
-            src = context;
-        else
-            src = source.evaluate(context);
+            throw new ExprInterpreterException("attempt to index a nil value")
+                    .located(getLocation());
+        ExpressionValue<?> src = source.evaluate(context);
+        if (src.isNil())
+            throw new ExprInterpreterException("attempt to index a nil value")
+            .located(getLocation());
 
         // get destination
         try {

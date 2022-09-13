@@ -46,6 +46,11 @@ public class Context extends ExpressionValue<HashMap<?, ?>> {
     }
 
     /**
+     * If this context is local.
+     */
+    boolean isLocal;
+
+    /**
      * The parent of this context.
      */
     Context parent;
@@ -77,6 +82,12 @@ public class Context extends ExpressionValue<HashMap<?, ?>> {
         return new Context(this, this.global);
     }
 
+    public Context child(boolean isLocal) {
+        Context ctx = new Context(this, this.global);
+        ctx.isLocal = isLocal;
+        return ctx;
+    }
+
     /* ------- Values ------- */
 
     public Map<ExpressionValue<?>, ExpressionValue<?>> getValues() {
@@ -93,9 +104,15 @@ public class Context extends ExpressionValue<HashMap<?, ?>> {
         if (values.containsKey(key))
             return (ExpressionValue<V>) values.get(key);
         // inquire parent
-        if (parent != null) {
+        if (parent != null && !parent.isLocal) {
             ExpressionValue<?> val;
             if (!(val = parent.getValueStrict(key)).isNil())
+                return (ExpressionValue<V>) val;
+        }
+        // inquire global
+        if (global != null && global != this) {
+            ExpressionValue<?> val;
+            if (!(val = global.getValueStrict(key)).isNil())
                 return (ExpressionValue<V>) val;
         }
 

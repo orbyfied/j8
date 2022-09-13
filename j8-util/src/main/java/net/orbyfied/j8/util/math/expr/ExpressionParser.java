@@ -5,6 +5,7 @@ import net.orbyfied.j8.util.Sequence;
 import net.orbyfied.j8.util.StringReader;
 import net.orbyfied.j8.util.math.expr.error.ExprInterpreterException;
 import net.orbyfied.j8.util.math.expr.error.ExprParserException;
+import net.orbyfied.j8.util.math.expr.error.SyntaxError;
 import net.orbyfied.j8.util.math.expr.node.*;
 
 import java.util.*;
@@ -215,16 +216,26 @@ public class ExpressionParser {
     Reader<Token<?>> tokenReader;
 
     private ExpressionNode node$BinOp(Supplier<ExpressionNode> supplier, Set<Operator> ops) {
+        // get first expression
+        if (tokenReader.current() == null)
+            throw new SyntaxError("expected expression");
         ExpressionNode left = supplier.get();
 
+        // for every operator
         Token<?> tok;
         while ((tok = tokenReader.current()) != null &&
                 tok.getType() == Token.Type.OPERATOR &&
                 ops.contains(tok.getValueAs(Operator.class))) {
+            // get operator
             Operator op = tok.getValueAs();
+            // get second operand
             tokenReader.next();
+            if (tokenReader.current() == null)
+                throw new SyntaxError("expected expression as second operand")
+                .located(new StringLocation(tok.loc, tok.loc.startIndex + 1, tok.loc.endIndex + 1));
             ExpressionNode right = supplier.get();
-            left = new BinOpNode(op, left, right).located(StringLocation.cover(left.loc, right.loc));
+            left = new BinOpNode(op, left, right)
+                    .located(tok.loc);
         }
 
         // return
@@ -239,7 +250,7 @@ public class ExpressionParser {
                 t1.type != Token.Type.RIGHT_PARENTHESIS) {
             tokenReader.next();
             if (tokenReader.current() == null)
-                throw new ExprParserException("expected ')' to close function call");
+                throw new SyntaxError("expected ')' to close function call");
             if (tokenReader.current().type == Token.Type.RIGHT_PARENTHESIS)
                 break;
             if (tokenReader.current().type == Token.Type.COMMA)
@@ -255,10 +266,10 @@ public class ExpressionParser {
         final ExpressionNode body = node$Expr();
         // create node
         return new ConstantNode(ExpressionFunction.make((ctx, args) -> {
-            // create child context
-            Context c = ctx.child();
+            // create local child context
+            Context c = ctx.child(true);
             // check args
-            if (args.length < paramNames.size())
+            if (args.length < paramNames.size() || args.length > paramNames.size())
                 throw new ExprInterpreterException("Expected " + paramNames.size() + " parameters, got " + args.length);
             // set args in context
             int l = args.length;
@@ -302,7 +313,7 @@ public class ExpressionParser {
             // check for global identifier index
             if (tok.getType() == Token.Type.IDENTIFIER) {
                 // create identifier node
-                IndexNode indexNode = new IndexNode(null,
+                IndexNode indexNode = new IndexNode(new ReturnContextNode(),
                         new ConstantNode(new ExpressionValue<>(ExpressionValue.Type.STRING, tok.getValueAs())));
                 ExpressionNode rnode = null;
 
@@ -312,9 +323,14 @@ public class ExpressionParser {
                 while ((tk1 = tokenReader.next()) != null &&
                         tk1.getType() == Token.Type.DOT) {
                     // advance and try collect identifier
+                    StringLocation loc1 = tokenReader.current().loc;
                     tokenReader.next();
+                    if (tokenReader.current() == null)
+                        throw new SyntaxError("expected identifier as index")
+                        .located(new StringLocation(loc1, loc1.endIndex + 1, loc1.endIndex + 1));
                     if (tokenReader.current().type != Token.Type.IDENTIFIER)
-                        throw new ExprParserException("expected identifier");
+                        throw new SyntaxError("expected identifier as index")
+                            .located(tokenReader.current().loc);
                     Token<?> idTok = tokenReader.current();
                     String id = idTok.getValueAs();
 
@@ -337,9 +353,11 @@ public class ExpressionParser {
                     Token<?> t1;
                     while ((t1 = tokenReader.current()) != null &&
                             t1.type != Token.Type.RIGHT_PARENTHESIS) {
+                        StringLocation loc1 = t1.loc;
                         tokenReader.next();
                         if (tokenReader.current() == null)
-                            throw new ExprParserException("expected ')' to close function call");
+                            throw new SyntaxError("expected ')' to close function call")
+                            .located(new StringLocation(loc1, loc1.endIndex + 1, loc1.endIndex + 1));
                         if (tokenReader.current().type == Token.Type.RIGHT_PARENTHESIS)
                             break;
 
@@ -377,9 +395,13 @@ public class ExpressionParser {
             // check for unary operator
             if (tok.getType() == Token.Type.OPERATOR && Set.of(
                     Operator.MINUS).contains(tok.getValueAs(Operator.class))) {
+                StringLocation loc1 = tokenReader.current().loc;
                 tokenReader.next();
+                if (tokenReader.current() == null)
+                    throw new SyntaxError("expected expression after unary operator")
+                    .located(new StringLocation(loc1, loc1.startIndex + 1, loc1.endIndex + 1));
                 ExpressionNode fac = node$Factor();
-                return new UnaryOpNode(tok.getValueAs(Operator.class), fac);
+                return new UnaryOpNode(tok.getValueAs(Operator.class), fac).located(loc1);
             }
 
             // check for expression
@@ -390,15 +412,15 @@ public class ExpressionParser {
                         tokenReader.next();
                         return node;
                     } else {
-                        throw new ExprParserException("Syntax Error: Expected ')' to end expression");
+                        throw new SyntaxError("expected ')' to end expression");
                     }
                 }
             }
         }
 
         // invalid value
-        throw new ExprParserException("Invalid Token: " + tokenReader.current() + ", expected NUMBER_LITERAL, " +
-                "OPERATOR or IDENTIFIER");
+        throw new SyntaxError("expected NUMBER_LITERAL, " +
+                "OPERATOR or IDENTIFIER, got " + tokenReader.current()).located(tokenReader.current().loc);
     }
 
     private ExpressionNode node$Number() {

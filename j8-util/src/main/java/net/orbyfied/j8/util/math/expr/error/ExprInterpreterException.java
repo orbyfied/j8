@@ -2,7 +2,7 @@ package net.orbyfied.j8.util.math.expr.error;
 
 import net.orbyfied.j8.util.math.expr.StringLocation;
 
-public class ExprInterpreterException extends RuntimeException implements LocatedException {
+public class ExprInterpreterException extends ExprException {
 
     StringLocation loc;
 

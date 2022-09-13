@@ -182,6 +182,14 @@ public class ExpressionValue<T> {
         this.val = val;
     }
 
+    public boolean checkBool() {
+        if (isNil())
+            return false;
+        if (getType() == Type.NUMBER)
+            return getValueAs(Double.class) != 0;
+        return getValueAs(Boolean.class);
+    }
+
     /* -------- Structures -------- */
 
     public ExpressionValue<T> structIndex(ExpressionValue<?> key) {

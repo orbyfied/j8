@@ -32,7 +32,17 @@ public abstract class ExpressionNode {
         /**
          * Call value.
          */
-        CALL;
+        CALL,
+
+        /**
+         * If statement.
+         */
+        IF,
+
+        /**
+         * Miscellaneous.
+         */
+        MISC;
 
     }
 

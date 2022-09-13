@@ -83,7 +83,7 @@ tasks {
         options.release.set(17) }
     compileTestJava {
         options.encoding = "utf8"
-        options.release.set(17) }
+        options.release.set(16) }
     javadoc {
         options.encoding = "utf8" }
     processResources {

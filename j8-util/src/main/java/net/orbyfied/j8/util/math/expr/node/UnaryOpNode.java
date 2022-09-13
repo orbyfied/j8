@@ -18,11 +18,18 @@ public class UnaryOpNode extends ExpressionNode {
 
     @Override
     public ExpressionValue<?> evaluate(Context ctx) {
-        double l = node.evaluate(ctx).checkNonNil().getValueAs();
+        ExpressionValue<?> val = node.evaluate(ctx);
+        if (val.isNil())
+            throw new ExprInterpreterException("got a nil operand")
+            .located(getLocation());
+        double l = val.getValueAs();
         double o = 0;
         switch (op) {
             case MINUS -> o = -l;
-            default -> { throw new ExprInterpreterException("operator not implemented: " + op.name()); }
+            default -> {
+                throw new ExprInterpreterException("operator not implemented: " + op.name())
+                .located(getLocation());
+            }
         };
 
         return new ExpressionValue<>(ExpressionValue.Type.NUMBER, o);
