@@ -37,7 +37,7 @@ public class LogLevel {
         return new LogLevel(id, (record, string) -> {
             string.put("level-" + id, (LogText.Stringable) format -> {
                 if (format) {
-                    return tf.code() + unformatted;
+                    return tf + unformatted + TextFormat.RESET;
                 } else {
                     return unformatted;
                 }

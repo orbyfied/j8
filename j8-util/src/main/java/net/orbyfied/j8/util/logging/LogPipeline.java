@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 public class LogPipeline {
 
@@ -15,6 +16,11 @@ public class LogPipeline {
 
     // the async executor
     Executor asyncExecutor;
+
+    public LogPipeline() {
+        // create default executor
+        this.asyncExecutor = Executors.newSingleThreadExecutor();
+    }
 
     // deploys a handler to the async executor
     // to be called with a record later,

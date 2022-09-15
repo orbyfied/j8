@@ -14,6 +14,10 @@ public class LogText {
 
     }
 
+    public static Stringable formatted(String unformatted, String formatted) {
+        return format -> (format ? formatted : unformatted);
+    }
+
     /////////////////////////////////////////
 
     // the components
@@ -28,16 +32,67 @@ public class LogText {
         return linear;
     }
 
+    /**
+     * Put a new component at the end.
+     * @param val The value.
+     * @return This.
+     */
+    public LogText put(Object val) {
+        mapped.put(Integer.toHexString(System.identityHashCode(val)), val);
+        linear.add(val);
+        return this;
+    }
+
+    /**
+     * Put a new component at the end.
+     * @param key The key.
+     * @param val The value.
+     * @return This.
+     */
     public LogText put(String key, Object val) {
         mapped.put(key, val);
         linear.add(val);
         return this;
     }
 
+    /**
+     * Put a new component at the specified index.
+     * @param key The key.
+     * @param idx The index.
+     * @param val The value.
+     * @return This.
+     */
     public LogText put(String key, int idx, Object val) {
         mapped.put(key, val);
         linear.add(idx, val);
         return this;
+    }
+
+    /**
+     * Create a new log text object, add
+     * it as a component under the specified
+     * key and return it.
+     * @param key The key to put it under.
+     * @return The text object.
+     */
+    public LogText sub(String key) {
+        LogText n = new LogText();
+        put(key, n);
+        return n;
+    }
+
+    /**
+     * Create a new log text object, add
+     * it as a component under the specified
+     * key and at the specified index and return it.
+     * @param key The key to put it under.
+     * @param idx The index.
+     * @return The text object.
+     */
+    public LogText sub(String key, int idx) {
+        LogText n = new LogText();
+        put(key, idx, n);
+        return n;
     }
 
     @SuppressWarnings("unchecked")
@@ -74,7 +129,9 @@ public class LogText {
         // create builder
         StringBuilder b = new StringBuilder();
         // append all components
-        for (Object entry : linear) {
+        int l = linear.size();
+        for (int i = 0; i < l; i++) {
+            Object entry = linear.get(i);
             if (entry instanceof LogText ls)
                 b.append(ls.toString(format));
             else if (entry instanceof Stringable s)
@@ -85,6 +142,11 @@ public class LogText {
 
         // return string
         return b.toString();
+    }
+
+    @Override
+    public String toString() {
+        return "LogText{" + linear.toString() + "}";
     }
 
 }

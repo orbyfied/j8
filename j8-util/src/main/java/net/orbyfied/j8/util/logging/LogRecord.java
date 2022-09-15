@@ -1,7 +1,7 @@
 package net.orbyfied.j8.util.logging;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @SuppressWarnings("unchecked")
@@ -12,21 +12,28 @@ public class LogRecord {
 
     // the level
     final LogLevel level;
+    // the stage
+    String stage;
+
+    // the message objects
+    final List<Object> message;
 
     // the log string
     final LogText string;
 
     // the carried information
-    final HashMap<String, Object> carry = new HashMap<>();
+    final ConcurrentHashMap<String, Object> carry = new ConcurrentHashMap<>();
 
     // if it was cancelled
     final AtomicBoolean cancelled = new AtomicBoolean(false);
     private AtomicBoolean cancelled1;
 
-    LogRecord(Logger logger, LogLevel level, LogText string) {
-        this.logger = logger;
-        this.level  = level;
-        this.string = string;
+    LogRecord(Logger logger, LogLevel level, String stage, LogText string, Object[] message) {
+        this.logger  = logger;
+        this.level   = level;
+        this.stage   = stage;
+        this.string  = string;
+        this.message = new ArrayList<>(Arrays.asList(message));
     }
 
     public Logger getLogger() {
@@ -39,6 +46,10 @@ public class LogRecord {
 
     public LogText getText() {
         return string;
+    }
+
+    public List<Object> getMessage() {
+        return message;
     }
 
     public boolean isCancelled() {

@@ -10,8 +10,7 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 /**
- * Utilities for working with reflection
- * safely.
+ * Utilities for working with reflection.
  */
 public class ReflectionUtil {
 

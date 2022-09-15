@@ -1,6 +1,5 @@
 package net.orbyfied.j8.util.logging.io;
 
-import net.orbyfied.j8.util.builder.Builder;
 import net.orbyfied.j8.util.builder.BuilderTemplate;
 import net.orbyfied.j8.util.builder.Constructor;
 import net.orbyfied.j8.util.builder.Property;
@@ -14,15 +13,25 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class LogOutput {
 
+    // builder template
+    private static final BuilderTemplate<LogOutput, Builder> TEMPLATE =
+            new BuilderTemplate<LogOutput, Builder>(LogOutput.class)
+                    .parameter("name", Property.ofString().require(true))
+                    .parameter("stream", Property.of(PrintStream.class).require(true))
+                    .parameter("formatted", Property.ofBool().require(false).defaulted(false))
+                    .constructors(Constructor.takeBuilder(LogOutput.class));
+
     public static final LogOutput STDOUT = builder("stdout")
             .stream(System.out)
             .formatted(true)
-            .build();
+            .build()
+            .setActive(true);
 
     public static final LogOutput VOIDING = builder("voiding")
             .stream(null)
             .formatted(false)
-            .build();
+            .build()
+            .setActive(true);
 
     ///////////////////////////////////////////////
 
@@ -209,13 +218,6 @@ public class LogOutput {
     public static Builder builder(String name) {
         return new Builder(name);
     }
-
-    private static final BuilderTemplate<LogOutput, Builder> TEMPLATE =
-            new BuilderTemplate<LogOutput, Builder>(LogOutput.class)
-                    .parameter("name", Property.ofString().require(true))
-                    .parameter("stream", Property.of(PrintStream.class).require(true))
-                    .parameter("formatted", Property.ofBool().require(false).defaulted(false))
-                    .constructors(Constructor.takeBuilder(LogOutput.class));
 
     public static class Builder extends net.orbyfied.j8.util.builder.Builder<LogOutput, Builder> {
         Builder(String name) {

@@ -9,7 +9,7 @@ public class Benchmarks {
                                          int passes, long totalTime, double averagePassTime) {
         public BenchmarkResult print(PrintStream stream) {
             long tms = totalTime / 1_000_000;
-            System.out.println("+- " + name + ": " + passes + " Passes " +
+            stream.println("+- " + name + ": " + passes + " Passes " +
                     (passes >= maxPasses ? "(MAX) " : "") + " | Total Time: " + totalTime + "ns (" + tms + "ms)" +
                     " | Avg. time/pass: " + averagePassTime + "ns (" + averagePassTime / 1_000_000 + "ms)");
             return this;
