@@ -15,6 +15,8 @@ public class Token<T> {
         COMMA("comma", null, false),
         DOT("dot", null, false),
         ASSIGN("assign", null, false),
+        ARROW("arrow", null, false),
+        COLON("colon", null, false),
 
         IDENTIFIER("identifier", String.class, true),
 

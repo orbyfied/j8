@@ -97,6 +97,11 @@ public class ExpressionValue<T> {
         FUNCTION("function", ExpressionFunction.class, v -> "function"),
 
         /**
+         * User data, wraps any Java {@link Object}
+         */
+        USER("userdata", Object.class, v -> v.getValue().toString()),
+
+        /**
          * A value representing nothing, the absence of
          * a value. It has a runtime type of {@link Void#TYPE}
          */

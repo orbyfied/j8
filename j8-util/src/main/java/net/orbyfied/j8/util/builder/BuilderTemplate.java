@@ -62,7 +62,8 @@ public class BuilderTemplate<T, B extends Builder> {
         return this;
     }
 
-    public BuilderTemplate<T, B> constructors(Constructor<T, B>... c) {
+    @SafeVarargs
+    public final BuilderTemplate<T, B> constructors(Constructor<T, B>... c) {
         // add all
         constructors.addAll(Arrays.asList(c));
 

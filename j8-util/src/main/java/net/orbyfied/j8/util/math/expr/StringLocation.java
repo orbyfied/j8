@@ -2,6 +2,8 @@ package net.orbyfied.j8.util.math.expr;
 
 import net.orbyfied.j8.util.StringReader;
 
+import java.math.BigDecimal;
+
 public class StringLocation {
 
 //    public static final StringLocation EMPTY = new StringLocation("<unkown>", "", -1, -1);

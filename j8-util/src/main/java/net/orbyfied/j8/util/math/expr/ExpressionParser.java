@@ -64,11 +64,20 @@ public class ExpressionParser {
             }
 
             // parse operator
+            Token<?> tk = null;
             si = strReader.index();
             Operator op = null;
             switch (c) {
                 case '+' -> op = Operator.PLUS;
-                case '-' -> op = Operator.MINUS;
+                case '-' -> {
+                    if (strReader.peek(1) == '>') {
+                        tk = new Token<>(Token.Type.ARROW);
+                        strReader.next();
+                    } else {
+                        op = Operator.MINUS;
+                    }
+                }
+
                 case '/' -> op = Operator.DIVIDE;
                 case '*' -> op = Operator.MULTIPLY;
                 case '^' -> op = Operator.POW;
@@ -84,13 +93,15 @@ public class ExpressionParser {
 
             // parse other symbols
             si = strReader.index();
-            Token<?> tk = null;
-            switch (c) {
-                case '(' -> tk = new Token<>(Token.Type.LEFT_PARENTHESIS);
-                case ')' -> tk = new Token<>(Token.Type.RIGHT_PARENTHESIS);
-                case ',' -> tk = new Token<>(Token.Type.COMMA);
-                case '.' -> tk = new Token<>(Token.Type.DOT);
-                case '=' -> tk = new Token<>(Token.Type.ASSIGN);
+            if (tk == null) {
+                switch (c) {
+                    case '(' -> tk = new Token<>(Token.Type.LEFT_PARENTHESIS);
+                    case ')' -> tk = new Token<>(Token.Type.RIGHT_PARENTHESIS);
+                    case ',' -> tk = new Token<>(Token.Type.COMMA);
+                    case '.' -> tk = new Token<>(Token.Type.DOT);
+                    case '=' -> tk = new Token<>(Token.Type.ASSIGN);
+                    case ':' -> tk = new Token<>(Token.Type.COLON);
+                }
             }
 
             if (tk != null) {
@@ -245,6 +256,7 @@ public class ExpressionParser {
     private ConstantNode val$FuncDef() {
         // collect parameters
         final List<String> paramNames = new ArrayList<>();
+        final List<String> paramTypes = new ArrayList<>();
         Token<?> t1;
         while ((t1 = tokenReader.current()) != null &&
                 t1.type != Token.Type.RIGHT_PARENTHESIS) {
@@ -258,6 +270,19 @@ public class ExpressionParser {
 
             // collect parameter
             paramNames.add(tokenReader.current().getValueAs(String.class));
+            // collect type
+            Token<?> tk;
+            if ((tk = tokenReader.peek(1)) != null && tk.type == Token.Type.COLON) {
+                tokenReader.next(2);
+                if (tokenReader.current() == null || tokenReader.current().type != Token.Type.IDENTIFIER)
+                    throw new SyntaxError("expected identifier to denote type after ':'")
+                    .located(new StringLocation(tk.loc, tk.loc.getStartIndex() + 1, tk.loc.getEndIndex() + 1));
+
+                String id = tokenReader.current().getValueAs();
+                paramTypes.add(id);
+            } else {
+                paramTypes.add(null);
+            }
         }
 
         tokenReader.next();
@@ -273,15 +298,17 @@ public class ExpressionParser {
                 throw new ExprInterpreterException("Expected " + paramNames.size() + " parameters, got " + args.length);
             // set args in context
             int l = args.length;
-            for (int i = 0; i < l; i++)
+            for (int i = 0; i < l; i++) {
+                // set value
                 c.setValueStrict(
                         new ExpressionValue<>(ExpressionValue.Type.STRING, paramNames.get(i)),
                         args[i]
                 );
+            }
 
             // invoke expression
             return body.evaluate(c);
-        }));
+        }, paramTypes));
     }
 
     private ExpressionNode node$Expr() {

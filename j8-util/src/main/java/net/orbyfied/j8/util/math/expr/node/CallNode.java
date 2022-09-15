@@ -20,11 +20,6 @@ public class CallNode extends ExpressionNode {
 
     @Override
     public ExpressionValue<?> evaluate(Context context) {
-        // evaluate parameters
-        ExpressionValue<?>[] paramValues = new ExpressionValue[params.size()];
-        for (int i = 0; i < params.size(); i++)
-            paramValues[i] = params.get(i).evaluate(context);
-
         // get function
         ExpressionValue<?> fn = func.evaluate(context);
         if (fn.getType() != ExpressionValue.Type.FUNCTION)
@@ -34,9 +29,8 @@ public class CallNode extends ExpressionNode {
         // evaluate function
         try {
             return func.evaluate(context)
-                    .checkType(ExpressionValue.Type.FUNCTION)
-                    .getValueAs(ExpressionFunction.class)
-                    .call(context, paramValues);
+                    .<ExpressionFunction<ExpressionNode>>getValueAs()
+                    .call(context, params.toArray(new ExpressionNode[0]));
         } catch (ExprInterpreterException e) {
             if (e.getLocation() == null)
                 e.located(getLocation());

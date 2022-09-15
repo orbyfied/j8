@@ -2,10 +2,7 @@ package net.orbyfied.j8.util.math.expr;
 
 import net.orbyfied.j8.util.math.expr.error.ExprInterpreterException;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Stack;
+import java.util.*;
 import java.util.function.Function;
 
 /**
@@ -144,6 +141,19 @@ public class Context extends ExpressionValue<HashMap<?, ?>> {
     }
 
     public static Context openLibs(Context context) {
+        /* --------- Lang ----------- */
+
+        context.tableSet("eval", ExpressionFunction.make(((ctx, values) -> {
+            return values[0].getValueAs(ExpressionNode.class).evaluate(ctx);
+        }), "expression"));
+
+        context.tableSet("expr", ExpressionFunction.make(((ctx, values) -> {
+            return values[0];
+        }), "expression"));
+
+        context.tableSet("to_string", ExpressionFunction.make((ctx, values) -> {
+            return new ExpressionValue<>(Type.STRING, values[0].toString());
+        }));
 
         /* --------- Math ----------- */
 

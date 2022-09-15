@@ -67,7 +67,7 @@ public class BusHandler implements Handler<Object> {
      */
     boolean registered = false;
 
-    /* ----- Handler ----- */
+    /* ----- LogHandler ----- */
 
     @Override
     public void handle(Object event) {
