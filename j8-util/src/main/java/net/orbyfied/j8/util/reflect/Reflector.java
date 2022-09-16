@@ -3,6 +3,9 @@ package net.orbyfied.j8.util.reflect;
 import net.orbyfied.j8.util.functional.ThrowableRunnable;
 import net.orbyfied.j8.util.functional.ThrowableSupplier;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -23,8 +26,7 @@ public class Reflector {
     static final DateFormat DATE_FORMAT = new SimpleDateFormat("hh:mm:ss.SSSS");
 
     public static final Consumer<ReflectorFail> FAIL_HANDLER_PRINT = fail -> {
-
-        System.err.println("(" + DATE_FORMAT.format(new Date()) + ") REFLECT FAIL" +
+        System.err.println("(" + DATE_FORMAT.format(new Date()) + ") REFLECT FAIL '" + fail.reflector.name + "'" +
                 (fail.message != null ? " - " + fail.message : ""));
         for (Throwable t : fail.throwables)
             t.printStackTrace();
@@ -36,6 +38,9 @@ public class Reflector {
     final String name;
     // fail handler
     Consumer<ReflectorFail> handler = FAIL_HANDLER_RETHROW;
+
+    // method handle lookup
+    MethodHandles.Lookup mhLookup = MethodHandles.lookup();
 
     public Reflector(String name) {
         this.name = name;
@@ -91,6 +96,16 @@ public class Reflector {
 
     public Class<?> classForName(final String name, final boolean init, final ClassLoader loader) {
         return doSafe("reflect class for name '" + name + "'", () -> Class.forName(name, init, loader));
+    }
+
+    public MethodHandle virtualMethodHandle(final Class<?> klass, final String name, final Class<?>[] types) {
+        return doSafe("get method handle '" + name + "' on '" + klass.getName() + "'",
+                () -> mhLookup.findVirtual(klass, name, MethodType.methodType(Object.class, types)));
+    }
+
+    public MethodHandle staticMethodHandle(final Class<?> klass, final String name, final Class<?>[] types) {
+        return doSafe("get method handle '" + name + "' on '" + klass.getName() + "'",
+                () -> mhLookup.findStatic(klass, name, MethodType.methodType(Object.class, types)));
     }
 
     public Method reflectMethod(final Class<?> klass, final String name, final Class<?>[] types) {
@@ -150,6 +165,18 @@ public class Reflector {
     public void reflectSetField(final Field field, final Object on, final Object val) {
         doSafe("set field '" + field + "'",
                 () -> field.set(on, val));
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T> T reflectInvoke(final Method method, final Object on, final Object... args) {
+        return (T) doSafe("invoke method '" + method + "'",
+                () -> method.invoke(on, args));
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T> T methodInvoke(final MethodHandle method, final Object on, final Object... args) {
+        return (T) doSafe("invoke method '" + method + "'",
+                () -> method.invoke(on, args));
     }
 
 }

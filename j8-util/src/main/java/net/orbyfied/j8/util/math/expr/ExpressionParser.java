@@ -508,6 +508,12 @@ public class ExpressionParser {
         return this;
     }
 
+    public ExpressionParser forReader(StringReader reader) {
+        resetParsed();
+        this.strReader = reader;
+        return this;
+    }
+
     public ExpressionParser inFile(String fn) {
         this.fn = fn;
         return this;

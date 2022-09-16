@@ -3,6 +3,7 @@ package net.orbyfied.j8.util;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -11,6 +12,12 @@ import java.util.function.Predicate;
  * strings.
  */
 public class StringReader {
+
+    private static final Set<Character> DIGITS_2  = Set.of('0', '1');
+    private static final Set<Character> DIGITS_8  = Set.of('0', '1', '2', '3', '4', '5', '6', '7');
+    private static final Set<Character> DIGITS_10 = Set.of('0', '1', '2', '3', '4', '5', '6', '7', '8', '9');
+    private static final Set<Character> DIGITS_16 = Set.of('0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+            'A', 'B', 'C', 'D', 'E', 'F');
 
     /**
      * Character to indicate EOF.
@@ -246,6 +253,24 @@ public class StringReader {
 
     public StringReader branch() {
         return new StringReader(str, index);
+    }
+
+    /* ----- Utilities ----- */
+
+    public boolean isDigit(char c, int radix) {
+        char c1 = Character.toUpperCase(c);
+        return switch (radix) {
+            case 2 -> DIGITS_2.contains(c1);
+            case 8 -> DIGITS_8.contains(c1);
+            case 10 -> DIGITS_10.contains(c1);
+            case 16 -> DIGITS_16.contains(c1);
+            default -> false;
+        };
+    }
+
+    public int collectInt(final int radix) {
+        String str = collect(c -> isDigit(c, radix));
+        return Integer.parseInt(str);
     }
 
 }

@@ -1,5 +1,6 @@
 package net.orbyfied.j8.util.logging;
 
+import net.orbyfied.j8.util.StringUtil;
 import net.orbyfied.j8.util.logging.io.LogOutput;
 
 import java.util.ArrayList;
@@ -101,8 +102,8 @@ public class Logger {
 
     /* Log */
 
-    public Logger log(LogLevel level, Consumer<LogRecord> consumer, Object... message) {
-        return this;
+    public Logger logf(LogLevel level, String format, Object... values) {
+        return log(level, StringUtil.pattern(format).format(values));
     }
 
     public Logger log(LogLevel level, Object... message) {
