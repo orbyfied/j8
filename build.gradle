@@ -1,3 +1,33 @@
+import java.nio.file.Path;
+
 // project settings
 group   'net.orbyfied.j8'
 version '0.1.0'
+
+// global tasks
+task("publishAll") {
+    group '$'
+    doLast {
+        boolean isWindows = System.getProperty("os.name")
+                .toLowerCase().startsWith("windows");
+
+        for (Project proj : rootProject.getSubprojects()) {
+            // check if publishable
+            if (proj.getPlugins().hasPlugin("maven-publish")) {
+                System.out.println("PUBLISH: Publishing project " + proj.name);
+
+                // call task
+                String str = ""
+                if (isWindows) {
+                    str += "cmd.exe /c \"" + rootProject.projectDir + "/gradlew.bat\" "
+                } else {
+                    str += "sh -c \"" + rootProject.projectDir + "/gradlew\" "
+                }
+                str += ":" + proj.name + ":publish"
+                System.out.println(str)
+                new ProcessBuilder(str)
+                    .start()
+            }
+        }
+    }
+}

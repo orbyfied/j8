@@ -73,6 +73,10 @@ if (hasPublishing()) {
 
 tasks {
 
+    if (hasPublishing()) {
+
+    }
+
     if (ipa()) {
         assemble {
             dependsOn(shadowJar, reobfJar) }
