@@ -1,4 +1,4 @@
-package net.orbyfied.j8.util.ops;
+package net.orbyfied.j8.util.functional;
 
 import java.util.List;
 import java.util.Map;
@@ -7,6 +7,13 @@ import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+/**
+ * An operation which works on an entry in a collection
+ * or provider, by key and value.
+ * @param <R> The return type.
+ * @param <K> The key type.
+ * @param <V> The value type.
+ */
 public interface EntryOperation<R, K, V> extends Operation<R> {
 
     R with();

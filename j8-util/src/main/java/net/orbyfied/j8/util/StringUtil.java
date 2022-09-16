@@ -187,4 +187,13 @@ public class StringUtil {
         return pattern;
     }
 
+    /* -------- Other --------- */
+
+    public static String extendTail(String str, int targetLength, char ext) {
+        int t = targetLength - str.length();
+        if (t > 0)
+            str += ("" + ext).repeat(t);
+        return str;
+    }
+
 }

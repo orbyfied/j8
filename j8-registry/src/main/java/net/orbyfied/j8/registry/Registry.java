@@ -3,7 +3,7 @@ package net.orbyfied.j8.registry;
 import net.orbyfied.j8.util.functional.Accumulator;
 import net.orbyfied.j8.util.functional.KeyProvider;
 import net.orbyfied.j8.util.functional.ValueProvider;
-import net.orbyfied.j8.util.ops.EntryOperation;
+import net.orbyfied.j8.util.functional.EntryOperation;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
