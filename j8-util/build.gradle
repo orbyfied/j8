@@ -24,7 +24,7 @@ ext {
 }
 
 // Properties
-version '0.2.1.1'
+version '0.2.1.1_hotfix1'
 
 apply from: '../buildSrc/j8-module.gradle', to: project
 

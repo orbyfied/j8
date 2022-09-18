@@ -42,7 +42,7 @@ public class Logger {
     protected String tag;
     // the stage
     // this is thread local for thread safety
-    protected ThreadLocal<String> stage;
+    protected ThreadLocal<String> stage = new InheritableThreadLocal<>();
 
     // output streams
     @Deprecated // broken
