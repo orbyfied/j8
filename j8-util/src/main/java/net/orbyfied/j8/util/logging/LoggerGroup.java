@@ -1,6 +1,7 @@
 package net.orbyfied.j8.util.logging;
 
 import net.orbyfied.j8.util.logging.io.LogOutput;
+import net.orbyfied.j8.util.logging.*;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -211,6 +212,12 @@ public class LoggerGroup {
                         int l = message.size();
                         for (int i = 0; i < l; i++) {
                             tMessage.put(Integer.toString(i), Objects.toString(message.get(i)));
+                        }
+
+                        // append newline if required
+                        if (text.newLine()) {
+                            text.lockNewline();
+                            text.put("newline", '\n');
                         }
 
                     }

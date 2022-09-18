@@ -24,12 +24,44 @@ public class LogText {
     final HashMap<String, Object> mapped = new LinkedHashMap<>();
     final ArrayList<Object> linear = new ArrayList<>();
 
+    // if a newline should be appended
+    Boolean newLine = false;
+
     public HashMap<String, Object> getMapped() {
         return mapped;
     }
 
     public ArrayList<Object> getLinear() {
         return linear;
+    }
+
+    /**
+     * Lock the new line value.
+     * @return This.
+     */
+    public LogText lockNewline() {
+        this.newLine = null;
+        return this;
+    }
+
+    /**
+     * Set if a newline is enabled.
+     * @param b Boolean.
+     * @return This.
+     */
+    public LogText newLine(boolean b) {
+        if (newLine == null)
+            return this;
+        this.newLine = b;
+        return this;
+    }
+
+    /**
+     * Get if a newline is enabled.
+     * @return True/false.
+     */
+    public boolean newLine() {
+        return newLine;
     }
 
     /**
@@ -139,6 +171,10 @@ public class LogText {
             else
                 b.append(entry);
         }
+
+        // append newline
+        if (newLine != null && newLine)
+            b.append("\n");
 
         // return string
         return b.toString();

@@ -3,11 +3,35 @@ package net.orbyfied.j8.util.logging;
 import net.orbyfied.j8.util.StringUtil;
 import net.orbyfied.j8.util.logging.io.LogOutput;
 
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
 public class Logger {
+
+    private static PrintStream createOutStream(final Logger logger,
+                                               final LogLevel level) {
+        return new PrintStream(new OutputStream() {
+            @Override
+            public void write(int b) throws IOException {
+                // write newlines raw
+                for (LogOutput output : logger.outputs)
+                    output.getStream().write(b);
+            }
+        }, true) {
+            @Override
+            public void write(byte[] buf, int off, int len) {
+                // log raw string, disable newline because println() will append
+                // a newline in the string, removing the need for a newline
+                logger.log(level, record -> record.getText().newLine(false), new String(buf));
+            }
+        };
+    }
+
+    //////////////////////////////////////////
 
     // the name
     protected final String name;
@@ -17,7 +41,14 @@ public class Logger {
     // the logger tag
     protected String tag;
     // the stage
-    protected String stage;
+    // this is thread local for thread safety
+    protected ThreadLocal<String> stage;
+
+    // output streams
+    @Deprecated // broken
+    public final PrintStream out = createOutStream(this, LogLevel.INFO);
+    @Deprecated // broken
+    public final PrintStream err = createOutStream(this, LogLevel.ERROR);
 
     /**
      * The pre-pipeline, this pipeline is called
@@ -61,7 +92,7 @@ public class Logger {
     }
 
     public String getStage() {
-        return stage;
+        return stage.get();
     }
 
     public String getTag() {
@@ -76,7 +107,7 @@ public class Logger {
     }
 
     public Logger stage(String stage) {
-        this.stage = stage;
+        this.stage.set(stage);
         return this;
     }
 
@@ -107,8 +138,17 @@ public class Logger {
     }
 
     public Logger log(LogLevel level, Object... message) {
+        return log(level, null, message);
+    }
+
+    public Logger log(LogLevel level, Consumer<LogRecord> consumer, Object... message) {
         // create log record
-        LogRecord record = new LogRecord(this, level, stage, new LogText(), message);
+        LogRecord record = new LogRecord(this, level, stage.get(), new LogText(), message);
+        record.getText().newLine(true);
+
+        // process record
+        if (consumer != null)
+            consumer.accept(record);
 
         // call pre pipeline
         record.setCancelled(false);
@@ -121,6 +161,43 @@ public class Logger {
 
         // return
         return this;
+    }
+    
+    public Logger info(String format, Object... values) {
+        return logf(LogLevel.INFO, format, values);
+    }
+
+    public Logger info(Object... values) {
+        return log(LogLevel.INFO, values);
+    }
+
+    public Logger ok(String format, Object... values) {
+        return logf(LogLevel.OK, format, values);
+    }
+
+    public Logger ok(Object... values) {
+        return log(LogLevel.OK, values);
+    }
+
+    public Logger warn(String format, Object... values) {
+        return logf(LogLevel.WARN, format, values);
+    }
+
+    public Logger warn(Object... values) {
+        return log(LogLevel.WARN, values);
+    }
+
+    public Logger err(String format, Object... values) {
+        return logf(LogLevel.ERROR, format, values);
+    }
+
+    public Logger err(Object... values) {
+        return log(LogLevel.ERROR, values);
+    }
+
+    public Logger errt(String format, Throwable t, Object... values) {
+        return log(LogLevel.ERROR, record -> record.withMisc(t),
+                StringUtil.format(format, values));
     }
 
 }

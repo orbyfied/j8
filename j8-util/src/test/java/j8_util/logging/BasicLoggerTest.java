@@ -44,15 +44,18 @@ public class BasicLoggerTest {
          * Logging.
          */
 
-        Reflector reflector = new Reflector("Hey!");
-        reflector.reflectFieldAccessible(reflector.classForName("java.lang.String"), "value");
-
         // create logger
         Logger logger = group.create("Server");
 
         logger.log(LogLevel.INFO, "Hello!");
         logger.stage("Startup");
         logger.log(LogLevel.INFO, "Hello!");
+
+        // test output streams
+        logger.out.println("Hello.");
+        logger.out.println(69);
+        logger.err.println("Error.");
+        logger.err.println(69);
     }
 
 }

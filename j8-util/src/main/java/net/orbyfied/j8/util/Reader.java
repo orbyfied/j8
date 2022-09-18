@@ -65,10 +65,10 @@ public class Reader<T> {
     /**
      * Get a data from the string relative
      * to the current index. Not clamped, rather
-     * returns {@link null} if the
+     * returns {@code null} if the
      * index is in an invalid position.
      * @param i The index.
-     * @return The data or {@link null}
+     * @return The data or {@code null}
      */
     public T peek(int i) {
         int idx = index + i;
@@ -79,7 +79,7 @@ public class Reader<T> {
 
     /**
      * Advances the position by 1 and
-     * returns the data or {@link null}
+     * returns the data or {@code null}
      * if in an invalid position.
      * @return The data.
      */
@@ -90,7 +90,7 @@ public class Reader<T> {
 
     /**
      * Advances the position by {@code a} and
-     * returns the data or {@link null}
+     * returns the data or {@code null}
      * if in an invalid position.
      * @param a The amount to advance by.
      * @return The data.
@@ -102,7 +102,7 @@ public class Reader<T> {
 
     /**
      * Decreases the position by 1 and
-     * returns the data or {@link null}
+     * returns the data or {@code null}
      * if in an invalid position.
      * @return The data.
      */
@@ -113,7 +113,7 @@ public class Reader<T> {
 
     /**
      * Decreases the position by {@code a} and
-     * returns the data or {@link null}
+     * returns the data or {@code null}
      * if in an invalid position.
      * @param a The amount to decrease by.
      * @return The data.
@@ -125,7 +125,7 @@ public class Reader<T> {
 
     /**
      * Returns the data at the current position
-     * or {@link null} if in an invalid position.
+     * or {@code null} if in an invalid position.
      * @return The data.
      */
     public T current() {

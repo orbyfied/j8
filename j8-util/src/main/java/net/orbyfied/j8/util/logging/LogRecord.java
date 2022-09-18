@@ -17,6 +17,8 @@ public class LogRecord {
 
     // the message objects
     final List<Object> message;
+    // the throwables in the message
+    final List<Object> misc = new ArrayList<>();
 
     // the log string
     final LogText string;
@@ -34,6 +36,11 @@ public class LogRecord {
         this.stage   = stage;
         this.string  = string;
         this.message = new ArrayList<>(Arrays.asList(message));
+    }
+
+    public LogRecord withMisc(Object t) {
+        misc.add(t);
+        return this;
     }
 
     public Logger getLogger() {

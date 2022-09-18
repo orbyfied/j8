@@ -206,7 +206,7 @@ public class LogOutput {
 
                     // write to output stream
                     if (stream != null)
-                        stream.println(str);
+                        stream.print(str);
                 }
             }
         }
