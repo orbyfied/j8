@@ -5,6 +5,7 @@ import net.orbyfied.j8.util.builder.Constructor;
 import net.orbyfied.j8.util.builder.Property;
 import net.orbyfied.j8.util.logging.LogPipeline;
 import net.orbyfied.j8.util.logging.LogRecord;
+import net.orbyfied.j8.util.logging.formatting.Ansi;
 
 import java.io.PrintStream;
 import java.util.ArrayDeque;
@@ -29,7 +30,7 @@ public class LogOutput {
 
     public static final LogOutput VOIDING = builder("voiding")
             .stream(null)
-            .formatted(false)
+            .formatted(true)
             .build()
             .setActive(true);
 
@@ -84,7 +85,7 @@ public class LogOutput {
         return b;
     }
 
-    /* Getters */
+    /* Getters and Setters */
 
     public String getName() {
         return name;
@@ -92,6 +93,11 @@ public class LogOutput {
 
     public boolean isFormatted() {
         return formatted;
+    }
+
+    public LogOutput setFormatted(boolean b) {
+        this.formatted = b;
+        return this;
     }
 
     public PrintStream getStream() {
@@ -203,6 +209,9 @@ public class LogOutput {
 
                     // stringify text
                     String str = record.getText().toString(formatted);
+                    // strip formatting if not formatted
+                    if (!isFormatted())
+                        str = Ansi.strip(str);
 
                     // write to output stream
                     if (stream != null)
