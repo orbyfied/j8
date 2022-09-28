@@ -1,0 +1,7 @@
+INDEX  : identifier(.identifier)>
+ASSIGN : INDEX = EXPR
+CALL   : INDEX(EXPR(, EXPR)>)
+
+FACTOR : INDEX | ASSIGN | CALL | NUMBER | EXPR
+TERM   : FACTOR (* FACTOR)>
+EXPR   : TERM (+ TERM)>

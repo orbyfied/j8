@@ -8,6 +8,7 @@ import java.lang.annotation.Annotation;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
+import java.lang.reflect.InaccessibleObjectException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
@@ -117,8 +118,16 @@ public class RegisteredListener {
                 // get event type
                 Class<? extends BusEvent> eventType = (Class<? extends BusEvent>) method.getParameterTypes()[0];
 
-                // get method handle for quick invocation
-                final MethodHandle handle = LOOKUP.unreflect(method);
+                // set method accessible
+                MethodHandle handle;
+                try {
+                    method.setAccessible(true);
+//                    handle = LOOKUP.unreflect(method);
+                } catch (Exception e) {
+                    Throwable cause = (e instanceof InaccessibleObjectException ? null : e);
+                    throw new IllegalArgumentException("Listener method " + method.getDeclaringClass().getName()
+                            + "#"+ method.getClass() + " is inaccessible", cause);
+                }
 
                 // create, configure and add handler
                 BusHandler handler = new BusHandler(bus, this, provider) {
@@ -127,7 +136,7 @@ public class RegisteredListener {
                     public void handle(Object event) {
                         if (!isEnabled()) return;
 
-                        try { handle.invoke(obj, event); }
+                        try { method.invoke(obj, event); }
                         catch (Throwable e) { e.printStackTrace(); }
                     }
 

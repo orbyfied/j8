@@ -8,6 +8,7 @@ import net.orbyfied.j8.util.math.expr.error.ExprParserException;
 import net.orbyfied.j8.util.math.expr.error.SyntaxError;
 import net.orbyfied.j8.util.math.expr.node.*;
 
+import java.lang.reflect.Field;
 import java.util.*;
 import java.util.function.Supplier;
 
@@ -15,6 +16,25 @@ import java.util.function.Supplier;
  * An expression parser.
  */
 public class ExpressionParser {
+
+    /*
+     * ------ Settings ------
+     */
+
+    private boolean settingConstantOptimization = true;
+    private boolean settingIndexInline = true;
+
+    public ExpressionParser withSetting(String str, boolean b) {
+        try {
+            Field f = getClass().getDeclaredField("setting" + str);
+            f.setAccessible(true);
+            f.set(this, b);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return this;
+    }
 
     /*
      * ------ Lexer ------
@@ -220,6 +240,14 @@ public class ExpressionParser {
      * ------ Parsing ------
      */
 
+    // the context to use for optimizing constants
+    private final Context constOptCtx = new Context(null, null);
+    // the context for inlining identifiers
+    private Context inlineContext = new Context(null, null)
+            .setValue("pi", Math.PI)
+            .setValue("PI", Math.PI)
+            .setValue("e", Math.E);
+
     // the head AST node
     ExpressionNode astNode;
 
@@ -247,6 +275,17 @@ public class ExpressionParser {
             ExpressionNode right = supplier.get();
             left = new BinOpNode(op, left, right)
                     .located(tok.loc);
+
+            // check if both nodes are constant
+            // if so optimize it to a constant
+            if (settingConstantOptimization) {
+                BinOpNode lb = (BinOpNode) left;
+                if (lb.getLeft() instanceof ConstantNode &&
+                        lb.getRight() instanceof ConstantNode) {
+                    // evaluate node and make constant
+                    left = new ConstantNode(lb.evaluate(constOptCtx));
+                }
+            }
         }
 
         // return
@@ -343,8 +382,8 @@ public class ExpressionParser {
             ExpressionNode indexNode;
 
             // check for unary operator
-            if (tok.getType() == Token.Type.OPERATOR && Set.of(
-                    Operator.MINUS).contains(tok.getValueAs(Operator.class))) {
+            if (tok.getType() == Token.Type.OPERATOR &&
+                    Objects.equals(Operator.MINUS, tok.getValueAs(Operator.class))) {
                 StringLocation loc1 = tokenReader.current().loc;
                 tokenReader.next();
                 if (tokenReader.current() == null)
@@ -352,6 +391,14 @@ public class ExpressionParser {
                             .located(new StringLocation(loc1, loc1.startIndex + 1, loc1.endIndex + 1));
                 ExpressionNode fac = node$Factor();
                 node = new UnaryOpNode(tok.getValueAs(Operator.class), fac).located(loc1);
+
+                // optimize to constant
+                if (settingConstantOptimization) {
+                    UnaryOpNode un = (UnaryOpNode) node;
+                    if (un.getNode() instanceof ConstantNode) {
+                        node = new ConstantNode(node.evaluate(constOptCtx));
+                    }
+                }
             }
 
             // check for more
@@ -376,13 +423,25 @@ public class ExpressionParser {
                     String id = idTok.getValueAs();
 
                     // update index node
-                    indexNode = (IndexNode) new IndexNode(indexNode,
+                    indexNode = new IndexNode(indexNode,
                             new ConstantNode(new ExpressionValue<>(ExpressionValue.Type.STRING, id))
                                     .located(idTok.loc))
                             .located(tk1.loc);
                 }
 
                 node = indexNode;
+
+                // inline to constant
+                if (settingIndexInline) {
+                    if (((IndexNode) node).getIndex() instanceof ConstantNode n) {
+                        if (((IndexNode) node).getSource() instanceof ReturnContextNode) {
+                            ExpressionValue<?> val = n.evaluate(constOptCtx);
+                            if (inlineContext.containsValueStrict(val)) {
+                                node = new ConstantNode(inlineContext.getValueStrict(val));
+                            }
+                        }
+                    }
+                }
             }
 
             // check for number
@@ -495,6 +554,15 @@ public class ExpressionParser {
      * ------ API ------
      */
 
+    public Context inlines() {
+        return inlineContext;
+    }
+
+    public ExpressionParser inlines(Context inlineContext) {
+        this.inlineContext = inlineContext;
+        return this;
+    }
+
     public ExpressionParser resetParsed() {
         this.tokens    = new ArrayList<>();
         this.astNode   = null;
@@ -524,6 +592,13 @@ public class ExpressionParser {
                 .lex()
                 .parse();
         return astNode.evaluate(ctx);
+    }
+
+    public ExpressionNode parseString(String str) {
+        forString(str)
+                .lex()
+                .parse();
+        return astNode;
     }
 
     public ExpressionParser lex() {

@@ -18,6 +18,18 @@ public class BinOpNode extends ExpressionNode {
     ExpressionNode right;
     Operator op;
 
+    public ExpressionNode getLeft() {
+        return left;
+    }
+
+    public ExpressionNode getRight() {
+        return right;
+    }
+
+    public Operator getOp() {
+        return op;
+    }
+
     @Override
     public ExpressionValue<?> evaluate(Context ctx) {
         double l = left.evaluate(ctx).checkNonNil().getValueAs();

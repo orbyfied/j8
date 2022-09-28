@@ -91,6 +91,24 @@ public class Context extends ExpressionValue<HashMap<?, ?>> {
         return values;
     }
 
+    public boolean containsValueStrict(ExpressionValue<?> key) {
+        // inquire local map
+        if (values.containsKey(key))
+            return true;
+        // inquire parent
+        if (parent != null && !parent.isLocal) {
+            if (parent.containsValueStrict(key))
+                return true;
+        }
+        // inquire global
+        if (global != null && global != this) {
+            return global.containsValueStrict(key);
+        }
+
+        // return nil
+        return false;
+    }
+
     public <V> ExpressionValue<V> getValue(Object obj) {
         return getValueStrict(ExpressionValue.of(obj));
     }
@@ -156,6 +174,10 @@ public class Context extends ExpressionValue<HashMap<?, ?>> {
         }));
 
         /* --------- Math ----------- */
+
+        context.tableSet("PI", Math.PI);
+        context.tableSet("pi", Math.PI);
+        context.tableSet("e",  Math.E);
 
         ExpressionValue<?> tMath = ExpressionValue.newTable();
 

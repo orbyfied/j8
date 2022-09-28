@@ -12,6 +12,10 @@ public class ConstantNode extends ExpressionNode {
 
     public ExpressionValue<?> value;
 
+    public ExpressionValue<?> getValue() {
+        return value;
+    }
+
     @Override
     public ExpressionValue<?> evaluate(Context ctx) {
         return value;

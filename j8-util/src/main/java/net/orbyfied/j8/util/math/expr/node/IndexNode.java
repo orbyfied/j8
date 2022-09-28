@@ -17,6 +17,14 @@ public class IndexNode extends ExpressionNode {
     public ExpressionNode src;
     public ExpressionNode index;
 
+    public ExpressionNode getSource() {
+        return src;
+    }
+
+    public ExpressionNode getIndex() {
+        return index;
+    }
+
     @Override
     public ExpressionValue<?> evaluate(Context context) {
         // evaluate source

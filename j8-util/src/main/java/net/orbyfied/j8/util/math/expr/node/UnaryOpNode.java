@@ -13,6 +13,14 @@ public class UnaryOpNode extends ExpressionNode {
         this.node = node;
     }
 
+    public ExpressionNode getNode() {
+        return node;
+    }
+
+    public Operator getOp() {
+        return op;
+    }
+
     ExpressionNode node;
     Operator op;
 

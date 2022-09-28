@@ -195,6 +195,24 @@ public class ExpressionValue<T> {
         return getValueAs(Boolean.class);
     }
 
+    /* -------- Conversions --------- */
+
+    public long asLong() {
+        return (Long) val;
+    }
+
+    public int asInt() {
+        return (Integer) val;
+    }
+
+    public double asDouble() {
+        return (Double) val;
+    }
+
+    public float asFloat() {
+        return (Float) val;
+    }
+
     /* -------- Structures -------- */
 
     public ExpressionValue<T> structIndex(ExpressionValue<?> key) {

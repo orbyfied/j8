@@ -9,9 +9,31 @@ public class SimpleExpressionTests {
     /* ------------------ 1 --------------------- */
 
     @Test
+    void test_10000_eval() {
+        final String input = "3*x";
+        ExpressionParser parser = new ExpressionParser()
+                .forString(input)
+                .lex()
+                .parse();
+        ExpressionNode node = parser.getAstNode();
+        Context context = Context.newDefaultGlobal()
+                .setValue("x", 4);
+        long t1 = System.nanoTime();
+        for (int i = 0; i < 10_000; i++)
+            node.evaluate(context);
+        long t2 = System.nanoTime();
+        System.out.println("Time: " + (t2 - t1) + "ns");
+    }
+
+    void setupEnv(Context context) {
+        context.setValue("x", 4);
+    }
+
+    final String input = "3*4";
+
+    @Test
     void test_benchmark_Parsing() {
         // input string and parser
-        final String input = "test(x * 9 + 1) ^ (7 - 5)";
         ExpressionParser parser = new ExpressionParser()
                 .forString(input);
 
@@ -28,7 +50,6 @@ public class SimpleExpressionTests {
     @Test
     void test_benchmark_ParsingAndExec() {
         // input string, parser and context
-        final String input = "test(x * 9 + 1) ^ (7 - 5)";
         ExpressionParser parser = new ExpressionParser()
                 .forString(input);
         Context global = (Context) Context.newDefaultGlobal()
@@ -50,7 +71,6 @@ public class SimpleExpressionTests {
     @Test
     void test_benchmark_Exec() {
         // input string, parser and context
-        final String input = "test(x * 9 + 1) ^ (7 - 5)";
         ExpressionParser parser = new ExpressionParser()
                 .forString(input);
         Context global = (Context) Context.newDefaultGlobal()

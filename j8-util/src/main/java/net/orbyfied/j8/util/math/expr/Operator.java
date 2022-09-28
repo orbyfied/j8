@@ -9,14 +9,9 @@ public enum Operator {
     POW("^");
 
     String string;
-    int parameterCount;
 
     Operator(String string) {
         this.string = string;
-    }
-
-    public int getParameterCount() {
-        return parameterCount;
     }
 
     public String getString() {
