@@ -1,6 +1,6 @@
 package net.orbyfied.j8.util.math.expr.vm;
 
-public record StackExpressionInstruction(short opcode) {
+public record StackExprInst(short opcode) {
 
     /*
         Opcodes

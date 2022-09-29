@@ -8,6 +8,9 @@
 #define NATIVE_VM_H
 
 #include <cstdint>
+#include <string>
+#include <atomic>
+
 #include "util.h"
 
 /*
@@ -27,7 +30,7 @@ static constexpr uint16_t OP_DIV = 0x13;
 static constexpr uint16_t OP_POW = 0x14;
 
 /*
- * Stack
+ * Value Stack
  */
 
 // stack value types
@@ -46,7 +49,7 @@ class ThreadValueStack {
 private:
     // the pointer to the start of
     // the actual data on the stack
-    VmStackVal* _data = nullptr;
+    VmStackVal* _data = new VmStackVal[0];
     // the index into the stack
     int _top = -1;
     // the space allocated
@@ -65,8 +68,111 @@ public:
     // index format -> negative is from top of stack, positive is from bottom
     VmStackVal at(int idx);
 
+    void expect_size(int size);
+
     /* internal */
     void resize(unsigned int len);
+};
+
+/*
+ * Call Stack
+ */
+
+struct VmCallFrame {
+    // the PC position
+    // only updated when an interrupt
+    // like a function call is triggered
+    uint8_t pc = 0;
+    // the function or scope name
+    std::string* scope_name;
+
+    // the local data
+    uint64_t* local_data;
+    // the local data size
+    uint16_t  local_data_size;
+};
+
+VmCallFrame new_call_frame(std::string& scope_name, uint16_t local_data_size);
+
+class ThreadCallStack {
+private:
+    // the pointer to the start of
+    // the actual data on the stack
+    VmCallFrame* _data = nullptr;
+    // the index into the stack
+    int _top = -1;
+    // the space allocated
+    unsigned int _alloc = 0;
+
+public:
+    /* getters */
+    VmCallFrame* get_data();
+    int get_top();
+    unsigned int get_allocated();
+
+    /* operations */
+    void push(VmCallFrame val);
+    VmCallFrame pop();
+    VmCallFrame peek();
+    // index format -> negative is from top of stack, positive is from bottom
+    VmCallFrame at(int idx);
+
+    /* internal */
+    void resize(unsigned int len);
+};
+
+/*
+ * Program
+ */
+
+class VmProgramReader {
+private:
+    // the data
+    uint8_t* _data;
+    // the program counter in bytes
+    uint64_t _pc = 0;
+
+public:
+    VmProgramReader(uint8_t* data);
+
+    uint8_t* get_data();
+    uint64_t get_program_counter() const;
+
+    template<typename T>
+    T read();
+};
+
+/*
+ * VM
+ */
+
+class ExprVmThread {
+private:
+    // the call stack
+    ThreadCallStack* _call_stack;
+    // the value stack
+    ThreadValueStack* _value_stack;
+
+    // the program reader
+    VmProgramReader* _program_reader;
+
+    // running flag
+    std::atomic_bool _running;
+
+public:
+    ExprVmThread();
+
+    void set_program_data(VmProgramReader* reader);
+    void allocate_call_stack(unsigned int size);
+    void allocate_value_stack(unsigned int size);
+
+    ThreadCallStack*  get_call_stack();
+    ThreadValueStack* get_value_stack();
+
+    VmProgramReader* get_program_reader();
+
+    void run();
+    void interrupt(uint64_t pc);
 };
 
 #endif //NATIVE_VM_H

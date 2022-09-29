@@ -26,6 +26,7 @@ ext {
     hasNatvies    = true
     nativeName    = "j8util_native"
     nativeVersion = "1.0.0"
+    nativeSpecOS  = false
 }
 
 // Properties

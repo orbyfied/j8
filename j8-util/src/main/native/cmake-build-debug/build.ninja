@@ -63,13 +63,6 @@ build CMakeFiles/native.dir/util.cpp.obj: CXX_COMPILER__native_Debug C$:/Users/a
   OBJECT_DIR = CMakeFiles\native.dir
   OBJECT_FILE_DIR = CMakeFiles\native.dir
 
-build CMakeFiles/native.dir/opcodes.cpp.obj: CXX_COMPILER__native_Debug C$:/Users/atomf/Desktop/code/j8/j8-util/src/main/native/opcodes.cpp || cmake_object_order_depends_target_native
-  DEFINES = -Dnative_EXPORTS
-  DEP_FILE = CMakeFiles\native.dir\opcodes.cpp.obj.d
-  FLAGS = -g -std=gnu++14
-  OBJECT_DIR = CMakeFiles\native.dir
-  OBJECT_FILE_DIR = CMakeFiles\native.dir
-
 
 # =============================================================================
 # Link build statements for SHARED_LIBRARY target native
@@ -78,7 +71,7 @@ build CMakeFiles/native.dir/opcodes.cpp.obj: CXX_COMPILER__native_Debug C$:/User
 #############################################
 # Link the shared library libnative.dll
 
-build libnative.dll libnative.dll.a: CXX_SHARED_LIBRARY_LINKER__native_Debug CMakeFiles/native.dir/vm.cpp.obj CMakeFiles/native.dir/util.cpp.obj CMakeFiles/native.dir/opcodes.cpp.obj
+build libnative.dll libnative.dll.a: CXX_SHARED_LIBRARY_LINKER__native_Debug CMakeFiles/native.dir/vm.cpp.obj CMakeFiles/native.dir/util.cpp.obj
   LANGUAGE_COMPILE_FLAGS = -g
   LINK_LIBRARIES = -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
   OBJECT_DIR = CMakeFiles\native.dir

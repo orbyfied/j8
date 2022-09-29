@@ -1,4 +1,5 @@
 import java.nio.charset.StandardCharsets
+import java.nio.file.Files
 
 if (hasPaper) {
     // for minecraft
@@ -139,10 +140,59 @@ dependencies {
 // Natives
 
 if (project.hasProperty("hasNatives") && hasNatives) {
-    String name = nativeName;
-    String ver  = nativeVersion;
+    {
+        Task task = task("copyNatives");
+        task.group("build")
+        task.doLast {
+            // cmake process
+        }
+    }
 
-    for (File file : new File(project.projectDir, "src/native/cmake-"
+    {
+        Task task = task("copyNatives");
+        task.group("build")
+        task.doLast {
+            String name = nativeName;
+            String ver = nativeVersion;
+
+            for (File bdir : new File(project.projectDir, "src/native")) {
+                if (!bdir.name.startsWith("cmake-build-"))
+                    continue;
+
+                // copy binaries
+                final Set<String> binExts = Set.of("dll", "so", "dylib")
+                for (File bin : bdir.listFiles(new FileFilter() {
+                    @Override
+                    boolean accept(File pathname) {
+                        String[] name = pathname.getName().split("\\.")
+                        if (name.length < 2)
+                            return false
+                        return binExts.contains(name[1])
+                    }
+                })) {
+                    // get extension from name
+                    String[] orgName = bin.getName().split("\\.")
+                    String ext = orgName[1]
+
+                    // create new name
+                    String arch = System.getProperty("os.arch");
+                    String os = ""
+                    if (nativeSpecOS) {
+                        os = "-" +
+                    }
+
+                    String name = nativeName + "-" + nativeName + "-" + arch + "-" + os + "." + ext;
+
+                    // copy native to resources
+                    File resFolder = new File(project.projectDir, "src/resources/natives/");
+                    resFolder.mkdirs()
+                    Files.copy(bin.toPath(), resFolder.toPath().resolve(name));
+                }
+
+                break;
+            }
+        }
+    }
 }
 
 // Test Configuration
