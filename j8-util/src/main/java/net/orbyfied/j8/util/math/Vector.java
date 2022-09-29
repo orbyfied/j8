@@ -27,6 +27,11 @@ public class Vector {
         return data;
     }
 
+    public Vector set(int i, double d) {
+        data[i] = d;
+        return this;
+    }
+
     /* ---- Math ---- */
 
     public double dot(Vector vec) {

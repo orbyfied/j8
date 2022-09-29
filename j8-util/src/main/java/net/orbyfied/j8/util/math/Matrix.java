@@ -61,7 +61,14 @@ public class Matrix {
 
     /* ---- Math ---- */
 
-    public Vector product(Vector vec) {
+    public Vector dot(Vector vec) {
+        int s = vec.s;
+        if (w != s || h != s)
+            throw new IllegalArgumentException("Invalid size for matrix: expected " + s + "x" + s + ", got " + w + "x" + h);
+        Vector vector = new Vector(vec.s);
+        for (int i = 0; i < s; i++) {
+            // TODO
+        }
         return vec;
     }
 

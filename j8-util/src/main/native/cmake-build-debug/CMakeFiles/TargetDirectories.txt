@@ -1,0 +1,3 @@
+C:/Users/atomf/Desktop/code/j8/j8-util/src/main/native/cmake-build-debug/CMakeFiles/native.dir
+C:/Users/atomf/Desktop/code/j8/j8-util/src/main/native/cmake-build-debug/CMakeFiles/edit_cache.dir
+C:/Users/atomf/Desktop/code/j8/j8-util/src/main/native/cmake-build-debug/CMakeFiles/rebuild_cache.dir

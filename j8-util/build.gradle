@@ -21,6 +21,11 @@ ext {
 
     // Artifact
     desc = "General purpose Java utilities."
+
+    // Natives
+    hasNatvies    = true
+    nativeName    = "j8util_native"
+    nativeVersion = "1.0.0"
 }
 
 // Properties

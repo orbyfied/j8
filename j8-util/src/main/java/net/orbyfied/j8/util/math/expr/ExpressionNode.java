@@ -7,42 +7,52 @@ public abstract class ExpressionNode {
         /**
          * For a constant value.
          */
-        CONSTANT,
+        CONSTANT("Constant"),
 
         /**
          * Binary operator.
          */
-        BIN_OP,
+        BIN_OP("BinOp"),
 
         /**
          * Unary operator.
          */
-        UNARY_OP,
+        UNARY_OP("UnaryOp"),
 
         /**
          * Index.
          */
-        INDEX,
+        INDEX("Index"),
 
         /**
          * Assign.
          */
-        ASSIGN,
+        ASSIGN("Assign"),
 
         /**
          * Call value.
          */
-        CALL,
+        CALL("Call"),
 
         /**
          * If statement.
          */
-        IF,
+        IF("If"),
 
         /**
          * Miscellaneous.
          */
-        MISC;
+        MISC("Misc");
+
+        protected String name;
+
+        Type(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
 
     }
 

@@ -136,6 +136,15 @@ dependencies {
 
 }
 
+// Natives
+
+if (project.hasProperty("hasNatives") && hasNatives) {
+    String name = nativeName;
+    String ver  = nativeVersion;
+
+    for (File file : new File(project.projectDir, "src/native/cmake-"
+}
+
 // Test Configuration
 
 if (hasTesting) {
