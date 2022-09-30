@@ -1,7 +1,5 @@
 package net.orbyfied.j8.util;
 
-import net.orbyfied.j8.math.expr.error.SyntaxError;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -119,7 +117,7 @@ public class StringUtil {
 
         // skip end char
         if (reader.current() != '}')
-            throw new SyntaxError("expected '}' to close pattern placeholder");
+            throw new IllegalArgumentException("expected '}' to close pattern placeholder");
         reader.next();
 
         // create place part

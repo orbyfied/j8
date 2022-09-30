@@ -1,9 +1,77 @@
 from argparse import ArgumentParser
+from genericpath import isdir
 from json import JSONDecoder
 import os
 import subprocess
 import shutil
 from sys import argv
+
+################################
+# Utilities
+################################
+
+class Reader:
+    def __init__(self, str):
+        self.str = str
+        self.idx = 0
+
+    def current(self):
+        if self.idx < 0 or self.idx >= len(self.str):
+            return None
+        return self.str[self.idx]
+
+    def next(self, amt = 1):
+        self.idx += amt
+        if self.idx < 0 or self.idx >= len(self.str):
+            return None
+        return self.str[self.idx]
+
+    def prev(self, amt = 1):
+        self.idx -= amt
+        if self.idx < 0 or self.idx >= len(self.str):
+            return None
+        return self.str[self.idx]
+
+    def peek(self, off):
+        idx = self.idx + off
+        if idx >= len(self.str) or idx < 0:
+            return None
+        return self.str[idx]
+
+    def at(self, index):
+        if index > 0:
+            return self.str[index]
+        else:
+            idx = self.idx - abs(index)
+            if idx >= len(self.str) or idx < 0:
+                return None
+            return self.str[idx]
+
+def is_path_sep(char):
+    return char == '\\' or char == '/'
+
+def fix_path(pstr):
+    seg      = ""
+    segments = []
+    reader = Reader(pstr)
+    char   = reader.current()
+    while char != None:
+        # check for separator
+        if is_path_sep(char):
+            if len(seg) > 2 and seg[0] == '%':
+                seg = os.getenv(seg[1:-1])
+            segments.append(seg)
+            seg = ""
+        else:
+            seg += char
+
+        char = reader.next()
+
+    # stitch to string
+    result = ""
+    for segment in segments:
+        result += segment + "/"
+    return result
 
 ################################
 # State
@@ -274,23 +342,30 @@ def main_build_json(mdir, jsonfile):
 
     # get properties from json
     pTarget = json["target"]
-    pTSrcDir = os.path.join(mdir, pTarget["src_dir"])
+    pTSrcDir = os.path.join(mdir, fix_path(pTarget["src_dir"]))
     pTName   = pTarget["name"]
     pTType   = pTarget["type"]
     iTarget = BuildTarget(pTName, pTType, pTSrcDir)
 
     pArchs    = json["architectures"]
     pOses     = json["os_names"]
-    pObjDir   = json["obj_dir"]
-    pBinDir   = json["bin_dir"]
+    pObjDir   = fix_path(json["obj_dir"])
+    pBinDir   = fix_path(json["bin_dir"])
     pInclDirs = json["include_dirs"]
     pDeps     = json["dependencies"]
+
+    rInclDirs = []
+    for d in pInclDirs:
+        rInclDirs.append(fix_path(d))
+    rDeps = []
+    for d in pDeps:
+        rDeps.append(fix_path(d))
 
     iState = BuildState()
     iState.set_bin_dir(pBinDir)
     iState.set_obj_dir(pObjDir)
-    iState.set_include_dirs(pInclDirs)
-    iState.set_dependencies(pDeps)
+    iState.set_include_dirs(rInclDirs)
+    iState.set_dependencies(rDeps)
     iState.set_target(iTarget)
 
     # call build

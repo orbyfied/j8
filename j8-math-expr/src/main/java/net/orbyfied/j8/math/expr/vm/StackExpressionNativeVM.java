@@ -1,11 +1,16 @@
 package net.orbyfied.j8.math.expr.vm;
 
-import net.orbyfied.j8.util.Natives;
+import net.orbyfied.j8.math.expr.internal.Natives;
 
 public class StackExpressionNativeVM extends ExpressionVM<byte[]> {
 
+    public static void main(String[] args) {
+        new StackExpressionNativeVM().execute0(null, null);
+    }
+
     static {
-        Natives.loadNativeFromResource(StackExpressionNativeVM.class, "j8util_native", "1.0.0", false);
+        Natives.loadNativeFromResource(StackExpressionNativeVM.class, "j8mathexpr_native");
+        System.out.println("EHHEHEHEHEH");
     }
 
     ////////////////////////////

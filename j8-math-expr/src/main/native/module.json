@@ -8,13 +8,16 @@
     "architectures": ["x86", "x64"],
     "os_names": ["win", "mac", "linux"],
 
-    "obj_dir": "build/obj",
-    "bin_dir": "build/bin",
+    "obj_dir": "build/obj/",
+    "bin_dir": "../resources/natives/",
 
     "dependencies": [
 
     ],
     "include_dirs": [
-        "./bakus/"
+        "../../../build/generated/sources/headers/java/main/",
+
+        "%JAVA_HOME%/include/",
+        "%JAVA_HOME%/include/win32/"
     ]
 }
