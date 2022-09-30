@@ -1,6 +1,6 @@
 package net.orbyfied.j8.util;
 
-import net.orbyfied.j8.util.math.expr.error.SyntaxError;
+import net.orbyfied.j8.math.expr.error.SyntaxError;
 
 import java.util.ArrayList;
 import java.util.List;
