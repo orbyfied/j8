@@ -241,7 +241,7 @@ void ExprVmThread::run() {
         switch (opcode) {
 
             case OP_PUSH_NUMBER:
-                O_pushNumber(this);
+                O_push_number(this);
                 break;
 
             case OP_ADD:

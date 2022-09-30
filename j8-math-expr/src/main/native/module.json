@@ -1,0 +1,20 @@
+{
+    "target": {
+        "name": "j8mathexpr_native",
+        "type": "library:dynamic",
+        "src_dir": "./"
+    },
+
+    "architectures": ["x86", "x64"],
+    "os_names": ["win", "mac", "linux"],
+
+    "obj_dir": "build/obj",
+    "bin_dir": "build/bin",
+
+    "dependencies": [
+
+    ],
+    "include_dirs": [
+        "./bakus/"
+    ]
+}

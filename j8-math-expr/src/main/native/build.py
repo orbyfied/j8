@@ -1,16 +1,21 @@
-from operator import indexOf
+from argparse import ArgumentParser
+from json import JSONDecoder
 import os
 import subprocess
 import shutil
+from sys import argv
 
 ################################
 # State
 ################################
 
+DEBUG = False
+
 class BuildTarget:
-    def __init__(self, name : str, type : str):
+    def __init__(self, name : str, type : str, src_dir : str):
         self.name = name
         self.type = type
+        self.src_dir = src_dir
 
 class BuildState:
     def __init__(self):
@@ -41,8 +46,12 @@ class BuildState:
         self.bin_dir = fn
         return self
 
-    def set_src_dir(self, fn):
-        self.src_dir = fn
+    def set_include_dirs(self, dirs):
+        self.include_dirs = dirs
+        return self
+
+    def set_dependencies(self, deps):
+        self.dependencies = deps
         return self
 
     def add_include_dir(self, fn):
@@ -70,7 +79,13 @@ CXX_COMPILER = 'g++'
 CXX_CFLAGS   = '-shared'
 
 def get_obj_dir(state, target, osName, arch):
-    return os.path.join(state.obj_dir, target.name + "-" + get_platform_str(osName, arch))
+    # construct name
+    name = os.path.join(state.obj_dir, target.name + "-" + get_platform_str(osName, arch))
+    # create if absent
+    if not os.path.exists(name):
+        os.makedirs(name)
+    # return
+    return name;
 
 def get_obj_output(state : BuildState, target, rel_filename, osName, arch):
     # replace directory seperators
@@ -85,10 +100,10 @@ def compile_file(state : BuildState, target, filename, osName, arch):
     # build flags
     flags = []
     # append source file
-    flags.append("-c " + filename)
+    flags.append("-c \"" + filename + "\"")
     # append object output
     obj_out = get_obj_output(state, target, filename, osName, arch)
-    flags.append("-o " + obj_out)
+    flags.append("-o \"" + obj_out + "\"")
     # append architecture
     if arch == 'x64':
         flags.append("-m64")
@@ -96,8 +111,11 @@ def compile_file(state : BuildState, target, filename, osName, arch):
         flags.append("-m32")
     # append platform defines
     if osName != None:
-        flags.append("-D_OS " + osName)
-    flags.append("-D_ARCH " + arch)
+        flags.append("-D_OS=" + osName)
+    flags.append("-D_ARCH=" + arch)
+    # append include directories
+    for include_dir in state.include_dirs:
+        flags.append("-I \"" + include_dir + "\"")
     # append user defined flags
     flags.append(CXX_CFLAGS)
     # stringify flags
@@ -109,7 +127,8 @@ def compile_file(state : BuildState, target, filename, osName, arch):
 
     # call command
     print("Compiling '" + filename + "' " + target.name + " (" + target.type + ") " + get_platform_str(osName, arch))
-    process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    if DEBUG: print("-> '" + cmd + "'")
+    process = subprocess.Popen(cmd, shell=True)
     process.wait()
 
     # return code
@@ -119,7 +138,7 @@ def compile_file(state : BuildState, target, filename, osName, arch):
 # Linking
 ################################
 
-LD_EXE   = 'ld'
+LD_EXE   = 'g++'
 LD_FLAGS = '-shared'
 
 def get_output_file_name(state : BuildState, target : BuildTarget, osName : str, arch):
@@ -140,7 +159,7 @@ def get_output_file_name(state : BuildState, target : BuildTarget, osName : str,
         elif spec == 'dynamic':
             ext = '.so'
     # build final file name
-    return target.name + "-" + get_platform_str(osName, arch) + "."
+    return target.name + "-" + get_platform_str(osName, arch) + ext
 
 def link_target(state, target, osName, arch):
     # get obj file directory
@@ -149,12 +168,20 @@ def link_target(state, target, osName, arch):
     # build flags
     flags = []
     # append output file
+    if not os.path.exists(state.bin_dir):
+        os.makedirs(state.bin_dir)
     out_file = os.path.join(state.bin_dir, get_output_file_name(state, target, osName, arch))
-    flags.append("-o " + out_file)
+    flags.append("-o \"" + out_file + "\"")
     # append all object files
     for of in os.listdir(obj_dir):
         if of.endswith(".o"):
-            flags.append(os.path.join(obj_dir, of))
+            flags.append("\"" + os.path.join(obj_dir, of) + "\"")
+    # append architecture
+    if arch == 'x64':
+        flags.append("-m64")
+    elif arch == 'x32':
+        flags.append("-m32")
+    # TODO: append dependencies
     # append user flags
     flags.append(LD_FLAGS)
     # stringify flags
@@ -166,8 +193,111 @@ def link_target(state, target, osName, arch):
 
     # call command
     print("Linking " + target.name + " (" + target.type + ") " + get_platform_str(osName, arch) + " -> " + out_file)
-    process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    if DEBUG: print("-> '" + cmd + "'")
+    process = subprocess.Popen(cmd, shell=True)
     process.wait()
 
     # return exit
     return process.returncode, cmd, out_file
+
+################################
+# Build
+################################
+
+OS_LIST   = [ 'win', 'linux', 'mac' ]
+ARCH_LIST = [ 'x64', 'x86' ]
+
+SRC_FILE_EXTENSIONS = [ 'c', 'cpp', 'cxx', 'cx', 'c++' ]
+
+def compile_all_in(state : BuildState, src_dir : str, osName, arch):
+    # for all files in the directory
+    for src_file in os.listdir(src_dir):
+        if os.path.isdir(src_file):
+            # compile all files in that directory
+            compile_all_in(state, src_file, osName, arch)
+        else:
+            spl = src_file.split('.')
+            if len(spl) > 1 and spl[1] in SRC_FILE_EXTENSIONS:
+                # compile file
+                code, cmd, _, ofn = compile_file(state, state.target, src_file, osName, arch)
+                if code != 0:
+                    print("Compiling " + src_file + " (" + get_platform_str(osName, arch) + ") failed with code " + str(code))
+                    return -1
+    return 0
+
+def build_all_for(state : BuildState, osName, arch):
+    # print
+    target = state.target
+    print("Building target " + target.name + " (" + target.type + ") for platform " + get_platform_str(osName, arch))
+
+    # compile all files
+    code = compile_all_in(state, target.src_dir, osName, arch)
+    if code != 0:
+        print("Compiling " + target.name + " (" + target.type + ") failed for platform " + get_platform_str(osName, arch))
+        return
+    else:
+        print("Compiled " + target.name + " (" + target.type + ") for platform " + get_platform_str(osName, arch))
+    # link all files
+    code, ldcmd, binfn = link_target(state, target, osName, arch)
+    if code != 0:
+        print("Linking " + target.name + " (" + target.type + ") failed for platform " + get_platform_str(osName, arch))
+        return
+    else:
+        print("Linked " + target.name + " (" + target.type + ") for platform " + get_platform_str(osName, arch))
+
+    # complete
+    print("Build of " + target.name + " (" + target.type + ") complete for platform " + get_platform_str(osName, arch))
+
+def build_all(state : BuildState, target : BuildTarget, osNames, archs):
+    # set target to build
+    state.set_target(target)
+    print("Building target " + target.name + " (" + target.type + ") for all platforms")
+
+    # for all platforms build
+    for arch in archs:
+        for osName in osNames:
+            build_all_for(state, osName, arch)
+
+################################
+# Main
+################################
+
+def main_build_json(mdir, jsonfile):
+    # print
+    print("Loading module from '" + jsonfile + "' in '" + mdir + "'")
+
+    # read json from file
+    filestr = open(jsonfile, 'r')
+    jsonstr = filestr.read()
+    filestr.close()
+    json = JSONDecoder().decode(jsonstr)
+
+    # get properties from json
+    pTarget = json["target"]
+    pTSrcDir = os.path.join(mdir, pTarget["src_dir"])
+    pTName   = pTarget["name"]
+    pTType   = pTarget["type"]
+    iTarget = BuildTarget(pTName, pTType, pTSrcDir)
+
+    pArchs    = json["architectures"]
+    pOses     = json["os_names"]
+    pObjDir   = json["obj_dir"]
+    pBinDir   = json["bin_dir"]
+    pInclDirs = json["include_dirs"]
+    pDeps     = json["dependencies"]
+
+    iState = BuildState()
+    iState.set_bin_dir(pBinDir)
+    iState.set_obj_dir(pObjDir)
+    iState.set_include_dirs(pInclDirs)
+    iState.set_dependencies(pDeps)
+    iState.set_target(iTarget)
+
+    # call build
+    build_all(iState, iTarget, pOses, pArchs)
+
+def main(args):
+    main_build_json(".", "module.json")
+
+if __name__ == '__main__':
+    main(argv)
