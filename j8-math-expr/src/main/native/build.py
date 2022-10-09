@@ -1,5 +1,3 @@
-from argparse import ArgumentParser
-from genericpath import isdir
 from json import JSONDecoder
 import os
 import subprocess
@@ -223,9 +221,17 @@ def get_output_file_name(state : BuildState, target : BuildTarget, osName : str,
             raise ValueError('Invalid target type: %s' % target) 
         spec = spl[1]
         if spec == 'static':
-            ext = '.a'
+            if osName.lower().find('linux') != -1:
+                ext = '.a'
+            else:
+                ext = '.lib'
         elif spec == 'dynamic':
-            ext = '.so'
+            if osName.lower().find('win') != -1:
+                ext = '.dll'
+            elif osName.lower().find('linux') != -1:
+                ext = '.so'
+            else:
+                ext = '.dylib'
     # build final file name
     return target.name + "-" + get_platform_str(osName, arch) + ext
 

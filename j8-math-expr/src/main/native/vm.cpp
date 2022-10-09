@@ -225,6 +225,10 @@ inline void O_push_number(ExprVmThread* thread) {
     thread->get_value_stack()->push({ T_NUM,static_cast<uint64_t>(thread->get_program_reader()->read<double>()) });
 }
 
+/*
+ * Operations
+ */
+
 inline void O_add(ExprVmThread* thread) {
     ThreadValueStack* stack = thread->get_value_stack();
     double a = static_cast<double>(stack->pop().value);
@@ -232,6 +236,34 @@ inline void O_add(ExprVmThread* thread) {
     double v = a + b;
     stack->push({ T_NIL, static_cast<uint64_t>(v) });
 }
+
+inline void O_sub(ExprVmThread* thread) {
+    ThreadValueStack* stack = thread->get_value_stack();
+    double a = static_cast<double>(stack->pop().value);
+    double b = static_cast<double>(stack->pop().value);
+    double v = a - b;
+    stack->push({ T_NIL, static_cast<uint64_t>(v) });
+}
+
+inline void O_mul(ExprVmThread* thread) {
+    ThreadValueStack* stack = thread->get_value_stack();
+    double a = static_cast<double>(stack->pop().value);
+    double b = static_cast<double>(stack->pop().value);
+    double v = a * b;
+    stack->push({ T_NIL, static_cast<uint64_t>(v) });
+}
+
+inline void O_div(ExprVmThread* thread) {
+    ThreadValueStack* stack = thread->get_value_stack();
+    double a = static_cast<double>(stack->pop().value);
+    double b = static_cast<double>(stack->pop().value);
+    double v = a / b;
+    stack->push({ T_NIL, static_cast<uint64_t>(v) });
+}
+
+/*
+ * Core execute method.
+ */
 
 void ExprVmThread::run() {
     // while running
@@ -244,9 +276,10 @@ void ExprVmThread::run() {
                 O_push_number(this);
                 break;
 
-            case OP_ADD:
-                O_add(this);
-                break;
+            case OP_ADD: O_add(this); break;
+            case OP_SUB: O_sub(this); break;
+            case OP_MUL: O_mul(this); break;
+            case OP_DIV: O_div(this); break;
 
             default:
                 throw std::runtime_error(string_format("internal: unknown opcode 0x%04x", opcode));

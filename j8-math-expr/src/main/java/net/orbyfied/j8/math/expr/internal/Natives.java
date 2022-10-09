@@ -23,11 +23,12 @@ public class Natives {
             else arch = "x32";
             String os;
             String po = System.getProperty("os.name").toLowerCase(Locale.ROOT);
-            if (po.contains("win")) os = "win";
-            else if (po.contains("linux")) os = "linux";
-            else if (po.contains("mac")) os = "mac";
+            String ext;
+            if (po.contains("win")) { os = "win"; ext = ".dll"; }
+            else if (po.contains("linux")) { os = "linux"; ext = ".so"; }
+            else if (po.contains("mac")) { os = "mac"; ext = ".dylib"; }
             else throw new UnsupportedOperationException("unsupported OS");
-            String fn = name + "-" + arch + "-" + os + ".so";
+            String fn = name + "-" + arch + "-" + os + ext;
             String resName = "/natives/" + fn;
 
             // check for file
