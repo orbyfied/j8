@@ -90,7 +90,7 @@ public abstract class ExpressionNode {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + ": " + getDataAsString();
+        return getClass().getSimpleName() + getDataAsString();
     }
 
 }

@@ -1,0 +1,44 @@
+plugins {
+    // java
+    id 'java'
+    id 'java-library'
+
+    // for minecraft
+    id ("io.papermc.paperweight.userdev") version "1.3.5" apply false
+
+    // package publishing
+    id 'maven-publish'
+    id 'signing'
+}
+
+ext {
+    // Minecraft Version
+    hasPaper = false
+    minecraftVersion = "1.18.2"
+
+    // Testing
+    hasTesting = true
+
+    // Artifact
+    desc = "Fast Expression Parser & Runtime"
+
+    // Natives
+    hasNatvies    = false // TODO: native stack based VM
+    nativeName    = "j8utilexpr_native"
+    nativeVersion = "1.0.0"
+    nativeSpecOS  = false
+}
+
+// Properties
+version '0.1.0'
+
+apply from: '../buildSrc/j8-module.gradle', to: project
+
+// Dependencies
+
+dependencies {
+
+    // Projects
+    api project(":j8-util")
+
+}

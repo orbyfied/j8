@@ -13,8 +13,10 @@ public class SimpleExpressionTests {
 
     @Test
     void test_10000_eval() {
-        final String input = "3*x";
+        final String input = "3x";
         ExpressionParser parser = new ExpressionParser()
+                .withSetting("OneCharIds", true)
+                .withSetting("ImplicitMultiplication", true)
                 .forString(input)
                 .lex()
                 .parse();
@@ -22,6 +24,7 @@ public class SimpleExpressionTests {
         Context context = Context.newDefaultGlobal()
                 .setValue("x", 4);
         long t1 = System.nanoTime();
+        System.out.println(node);
         for (int i = 0; i < 10_000; i++)
             node.evaluate(context);
         long t2 = System.nanoTime();
@@ -32,7 +35,7 @@ public class SimpleExpressionTests {
         context.setValue("x", 4);
     }
 
-    final String input = "3*4";
+    final String input = "myfunc(a)";
 
     @Test
     void test_benchmark_Parsing() {

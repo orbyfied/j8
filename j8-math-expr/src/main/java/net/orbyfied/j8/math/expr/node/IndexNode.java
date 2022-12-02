@@ -45,6 +45,6 @@ public class IndexNode extends ExpressionNode {
 
     @Override
     protected String getDataAsString() {
-        return "(" + src + ")[" + index + "]";
+        return ": (" + src + ")[" + index + "]";
     }
 }

@@ -26,4 +26,5 @@ include 'j8-command-bukkit'
 include 'test-plugin-1_18_2'
 include 'j8-render'
 include 'j8-math-expr'
+include 'j8-util-expr'
 

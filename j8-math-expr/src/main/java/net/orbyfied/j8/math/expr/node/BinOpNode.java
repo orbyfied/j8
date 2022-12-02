@@ -49,7 +49,7 @@ public class BinOpNode extends ExpressionNode {
 
     @Override
     protected String getDataAsString() {
-        return "(" + left + ")" + op.getString() + "(" + right + ")";
+        return ": (" + left + ")" + op.getString() + "(" + right + ")";
     }
 
 }

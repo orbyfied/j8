@@ -1,9 +1,7 @@
 package net.orbyfied.j8.util;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.io.PrintStream;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -13,11 +11,27 @@ import java.util.function.Predicate;
  */
 public class StringReader {
 
-    private static final Set<Character> DIGITS_2  = Set.of('0', '1');
-    private static final Set<Character> DIGITS_8  = Set.of('0', '1', '2', '3', '4', '5', '6', '7');
-    private static final Set<Character> DIGITS_10 = Set.of('0', '1', '2', '3', '4', '5', '6', '7', '8', '9');
-    private static final Set<Character> DIGITS_16 = Set.of('0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-            'A', 'B', 'C', 'D', 'E', 'F');
+    private static final int[] DIGIT_TABLE = new int[256];
+
+    static {
+        Arrays.fill(DIGIT_TABLE, -1);
+        DIGIT_TABLE['0'] = 0;
+        DIGIT_TABLE['1'] = 1;
+        DIGIT_TABLE['2'] = 2;
+        DIGIT_TABLE['3'] = 3;
+        DIGIT_TABLE['4'] = 4;
+        DIGIT_TABLE['5'] = 5;
+        DIGIT_TABLE['6'] = 6;
+        DIGIT_TABLE['7'] = 7;
+        DIGIT_TABLE['8'] = 8;
+        DIGIT_TABLE['9'] = 9;
+        DIGIT_TABLE['a'] = 10;
+        DIGIT_TABLE['b'] = 11;
+        DIGIT_TABLE['c'] = 12;
+        DIGIT_TABLE['d'] = 13;
+        DIGIT_TABLE['e'] = 14;
+        DIGIT_TABLE['f'] = 15;
+    }
 
     /**
      * Character to indicate EOF.
@@ -257,20 +271,119 @@ public class StringReader {
 
     /* ----- Utilities ----- */
 
-    public boolean isDigit(char c, int radix) {
-        char c1 = Character.toUpperCase(c);
-        return switch (radix) {
-            case 2 -> DIGITS_2.contains(c1);
-            case 8 -> DIGITS_8.contains(c1);
-            case 10 -> DIGITS_10.contains(c1);
-            case 16 -> DIGITS_16.contains(c1);
-            default -> false;
-        };
+    public void debugPrint(PrintStream stream) {
+        stream.println("[READER] current: '" + current() + "', index: " + index() + ", nv10: " + getDigit(current(), 10));
+    }
+
+    public void debugPrint() {
+        debugPrint(System.out);
+    }
+
+    public static boolean isDigit(char c, int radix) {
+        return getDigit(c, radix) != -1;
+    }
+
+    public static int getDigit(char c, int radix) {
+        char c1 = Character.toLowerCase(c);
+        if (c1 > 255) return -1;
+        int nv = DIGIT_TABLE[c1];
+        return nv < radix ? nv : -1;
     }
 
     public int collectInt(final int radix) {
-        String str = collect(c -> isDigit(c, radix));
-        return Integer.parseInt(str);
+        boolean neg = false;
+        int  r = 0;
+        char c    ;
+        if (current() == '-') {
+            neg = true;
+            next();
+        }
+        while ((c = current()) != DONE) {
+            if (c == '_' || c == '\'') { next(); continue; }
+            int nv = getDigit(c, radix);
+            if (nv == -1) { break; }
+            r *= radix;
+            r += nv;
+            next();
+        }
+
+        return neg ? -r : r;
+    }
+
+    public int collectInt() {
+        return collectInt(10);
+    }
+
+    public long collectLong(final int radix) {
+        boolean neg = false;
+        long  r = 0;
+        char c    ;
+        if (current() == '-')
+            neg = true;
+        while ((c = current()) != DONE) {
+            if (c == '_' || c == '\'') { next(); continue; }
+            int nv = getDigit(c, radix);
+            if (nv == -1) { break; }
+            r *= radix;
+            r += nv;
+            next();
+        }
+
+        return neg ? -r : r;
+    }
+
+    public long collectLong() {
+        return collectLong(10);
+    }
+
+    public float collectFloat() {
+        boolean neg = false;
+        if (current() == '-') {
+            neg = true;
+            next();
+        }
+        float f = collectInt(10);
+        if (current() == '.') {
+            next();
+            char  c;
+            float r = 0;
+            float m = 0.1f;
+            while ((c = current()) != DONE) {
+                if (c == '_' || c == '\'') { next(); continue; }
+                int nv = getDigit(c, 10);
+                if (nv == -1) { break; }
+                r += nv * m;
+                m *= 0.1;
+                next();
+            }
+            f += r;
+        }
+        return neg ? -f : f;
+    }
+
+    public double collectDouble() {
+        boolean neg = false;
+        if (current() == '-') {
+            neg = true;
+            next();
+        }
+        double f = collectLong(10);
+        if (current() == '.') {
+            next();
+            char  c;
+            double r = 0;
+            double m = 0.1f;
+            while ((c = current()) != DONE) {
+                if (c == '_' || c == '\'') { next(); continue; }
+                int nv = getDigit(c, 10);
+                if (nv == -1) { break; }
+                r += nv * m;
+                m *= 0.1;
+                next();
+            }
+            f += r;
+        }
+        return neg ? -f : f;
     }
 
 }

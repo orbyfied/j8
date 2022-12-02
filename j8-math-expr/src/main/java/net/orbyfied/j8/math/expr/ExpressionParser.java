@@ -23,6 +23,8 @@ public class ExpressionParser {
 
     private boolean settingConstantOptimization = true;
     private boolean settingIndexInline = true;
+    private boolean settingOneCharIds = false;
+    private boolean settingImplicitMultiplication = true;
 
     public ExpressionParser withSetting(String str, boolean b) {
         try {
@@ -30,7 +32,7 @@ public class ExpressionParser {
             f.setAccessible(true);
             f.set(this, b);
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new IllegalArgumentException("Unknown setting for expression parser: " + str);
         }
 
         return this;
@@ -138,13 +140,36 @@ public class ExpressionParser {
 
                 // collect identifier token
                 Token<?> itk = collectIdentifier();
+                String istr = itk.getValueAs(String.class);
                 // switch for keywords
-                tokens.add((switch (itk.getValueAs(String.class)) {
-                    // check keywords
+                Token<?> ktk = switch (istr) {
+                    // check keywords before hand
                     case "func" -> new Token<>(Token.Type.KW_FUNC);
-                    // add identifier
-                    default -> itk;
-                }).located(new StringLocation(fn, strReader, si, strReader.index() - 1)));
+
+                    // return null if no keywords
+                    default -> null;
+                };
+                // append keyword if not null
+                if (ktk != null) {
+                    tokens.add(ktk.located(
+                            new StringLocation(fn, strReader, si, strReader.index() - 1))
+                    );
+                } else /* not a keyword */ {
+                    // append whole identifier
+                    if (!settingOneCharIds) {
+                        tokens.add(itk.located(new StringLocation(fn, strReader, si, strReader.index() - 1)));
+                    } else /* append each char */ {
+                        int l = istr.length();
+                        for (int i = 0; i < l; i++) {
+                            char ic = istr.charAt(i);
+                            int sidx = si + i;
+                            tokens.add(new Token<>(Token.Type.IDENTIFIER, String.valueOf(ic)).located(
+                                    new StringLocation(fn, strReader, sidx, sidx)
+                            ));
+                        }
+                    }
+                }
+
                 // continue, no need to advance
                 // because collection already did
                 continue;
@@ -255,6 +280,9 @@ public class ExpressionParser {
     Reader<Token<?>> tokenReader;
 
     private ExpressionNode node$BinOp(Supplier<ExpressionNode> supplier, Set<Operator> ops) {
+        // check implicit multiplication
+        boolean imul = settingImplicitMultiplication && ops.contains(Operator.MULTIPLY);
+
         // get first expression
         if (tokenReader.current() == null)
             throw new SyntaxError("expected expression");
@@ -262,13 +290,27 @@ public class ExpressionParser {
 
         // for every operator
         Token<?> tok;
-        while ((tok = tokenReader.current()) != null &&
-                tok.getType() == Token.Type.OPERATOR &&
-                ops.contains(tok.getValueAs(Operator.class))) {
-            // get operator
-            Operator op = tok.getValueAs();
+        while ((tok = tokenReader.current()) != null) {
+            // check for operator
+            Operator op;
+            if (tok.getType() == Token.Type.OPERATOR &&
+                    ops.contains(tok.getValueAs(Operator.class))) {
+                // get operator from token
+                op = tok.getValueAs();
+
+                // advance to second operand
+                tokenReader.next();
+            } else {
+                // check if we have implicit multiplication
+                if (imul) {
+                    // use multiplication
+                    op = Operator.MULTIPLY;
+                } else {
+                    break;
+                }
+            }
+
             // get second operand
-            tokenReader.next();
             if (tokenReader.current() == null)
                 throw new SyntaxError("expected expression as second operand")
                 .located(new StringLocation(tok.loc, tok.loc.startIndex + 1, tok.loc.endIndex + 1));
@@ -301,7 +343,7 @@ public class ExpressionParser {
                 t1.type != Token.Type.RIGHT_PARENTHESIS) {
             tokenReader.next();
             if (tokenReader.current() == null)
-                throw new SyntaxError("expected ')' to close function call");
+                throw new SyntaxError("expected ')' to close function definition");
             if (tokenReader.current().type == Token.Type.RIGHT_PARENTHESIS)
                 break;
             if (tokenReader.current().type == Token.Type.COMMA)
@@ -319,8 +361,6 @@ public class ExpressionParser {
 
                 String id = tokenReader.current().getValueAs();
                 paramTypes.add(id);
-            } else {
-                paramTypes.add(null);
             }
         }
 

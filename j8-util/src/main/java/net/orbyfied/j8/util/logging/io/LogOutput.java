@@ -175,6 +175,10 @@ public class LogOutput {
 
     class OutputWorker extends Thread {
 
+        {
+            this.setDaemon(true);
+        }
+
         @Override
         public void run() {
             // main loop

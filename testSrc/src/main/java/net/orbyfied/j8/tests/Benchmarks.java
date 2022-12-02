@@ -2,6 +2,7 @@ package net.orbyfied.j8.tests;
 
 import java.io.PrintStream;
 import java.util.function.Consumer;
+import java.util.function.IntConsumer;
 
 public class Benchmarks {
 
@@ -24,7 +25,7 @@ public class Benchmarks {
 
     public static BenchmarkResult performBenchmark(
             String name,
-            Consumer<Integer> func,
+            IntConsumer func,
             int maxPasses,
             long maxTime
     ) {

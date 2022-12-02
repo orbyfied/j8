@@ -76,7 +76,9 @@ public class SimpleGraphingTest {
 
     void init() {
         // init math
-        parser = new ExpressionParser();
+        parser = new ExpressionParser()
+                .withSetting("OneCharIds", true)
+                .withSetting("ImplicitMultiplication", true);
         ctx = Context.newDefaultGlobal();
 //        cache = new double[W];
 
@@ -369,7 +371,7 @@ public class SimpleGraphingTest {
         init();
 
         String str;
-        str = "sin(x / 20) * 100";
+        str = "1";
 //        str = "(x/10) ^ 3";
 
         node = parser.forString(str)
@@ -414,7 +416,7 @@ public class SimpleGraphingTest {
             }
         }, "TestInputThread");
 
-        inputThread.start();
+//        inputThread.start();
 
         // main loop
         mainLoop();

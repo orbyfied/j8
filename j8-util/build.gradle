@@ -27,7 +27,7 @@ ext {
 }
 
 // Properties
-version '0.2.1.1_hotfix2'
+version '0.2.1.2'
 
 apply from: '../buildSrc/j8-module.gradle', to: project
 
@@ -36,6 +36,6 @@ apply from: '../buildSrc/j8-module.gradle', to: project
 dependencies {
 
     // External Libraries
-    implementation 'it.unimi.dsi:fastutil:8.5.8'
+    api 'it.unimi.dsi:fastutil:8.5.8'
 
 }

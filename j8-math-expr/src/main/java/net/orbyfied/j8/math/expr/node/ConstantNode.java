@@ -23,6 +23,6 @@ public class ConstantNode extends ExpressionNode {
 
     @Override
     protected String getDataAsString() {
-        return value.toString();
+        return "= " + value.toString();
     }
 }

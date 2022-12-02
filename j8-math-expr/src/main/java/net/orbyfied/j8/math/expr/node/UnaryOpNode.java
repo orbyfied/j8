@@ -45,7 +45,7 @@ public class UnaryOpNode extends ExpressionNode {
 
     @Override
     protected String getDataAsString() {
-        return op.getString() + "(" + node + ")";
+        return ": " + op.getString() + "(" + node + ")";
     }
 
 }
