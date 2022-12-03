@@ -23,8 +23,8 @@ public class ConstantNode extends ASTNode {
     }
 
     @Override
-    public String getDataString() {
-        return "=" + value.toString();
+    public Object[] getDebugArgs() {
+        return new Object[] { value };
     }
 
 }

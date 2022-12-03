@@ -53,8 +53,8 @@ public class BinOpNode extends ASTNode {
     }
 
     @Override
-    public String getDataString() {
-        return "(" + left + " " + operator.getSymbol() + " " + right + ")";
+    public Object[] getDebugArgs() {
+        return new Object[] { operator, left, right };
     }
 
 }

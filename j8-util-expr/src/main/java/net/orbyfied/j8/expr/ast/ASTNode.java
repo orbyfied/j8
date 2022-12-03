@@ -1,7 +1,10 @@
 package net.orbyfied.j8.expr.ast;
 
-import net.orbyfied.j8.expr.StringLocation;
+import net.orbyfied.j8.expr.util.StringLocation;
 import net.orbyfied.j8.expr.ast.exec.ASTEvaluationContext;
+import net.orbyfied.j8.util.StringUtil;
+
+import java.util.StringJoiner;
 
 public abstract class ASTNode {
 
@@ -48,10 +51,17 @@ public abstract class ASTNode {
         return null;
     }
 
+    public Object[] getDebugArgs() {
+        return new Object[0];
+    }
+
     @Override
     public String toString() {
         String ds = getDataString();
-        return getClass().getSimpleName() + (ds != null ? ds : "");
+        StringJoiner j = new StringJoiner(", ");
+        for (Object o : getDebugArgs())
+            j.add(StringUtil.toStringDebug(o));
+        return type.getName() + "(" + j + ")" + (ds != null ? ":" + ds : "");
     }
 
 }

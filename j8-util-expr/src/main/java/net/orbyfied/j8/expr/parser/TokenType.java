@@ -18,6 +18,10 @@ public enum TokenType {
     // special
     LEFT_PAREN(false),
     RIGHT_PAREN(false),
+    LEFT_BRACKET(false),
+    RIGHT_BRACKET(false),
+    DOT(false),
+    COMMA(false),
 
     ;
 

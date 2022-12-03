@@ -1,6 +1,6 @@
 package net.orbyfied.j8.expr.error;
 
-import net.orbyfied.j8.expr.StringLocation;
+import net.orbyfied.j8.expr.util.StringLocation;
 
 public class ExprParserException extends ExprException {
 

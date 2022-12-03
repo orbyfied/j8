@@ -1,8 +1,6 @@
 package net.orbyfied.j8.util;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 public class StringUtil {
 
@@ -186,6 +184,26 @@ public class StringUtil {
     }
 
     /* -------- Other --------- */
+
+    public static String toStringDebug(Object o) {
+        if (o == null) return "<null>";
+        if (o instanceof CharSequence) return "\"" + o + "\"";
+        if (o instanceof Character) return "'" + o + "'";
+        if (o.getClass().isArray()) {
+            Object[] arr = (Object[]) o;
+            StringJoiner j = new StringJoiner(",", "[ ", " ]");
+            for (Object e : arr)
+                j.add(toStringDebug(e));
+            return j.toString();
+        }
+        if (o instanceof Map<?, ?> map) {
+            StringJoiner j = new StringJoiner(",", "{ ", " }");
+            for (Map.Entry<?, ?> entry : map.entrySet()) {
+                j.add(toStringDebug(entry.getKey()) + " : " + toStringDebug(entry.getValue()));
+            }
+        }
+        return o.toString();
+    }
 
     public static String extendTail(String str, int targetLength, char ext) {
         int t = targetLength - str.length();

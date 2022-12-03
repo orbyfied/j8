@@ -35,19 +35,39 @@ public class BasicTest {
         final ExpressionParser parser = new ExpressionParser()
                 .withSetting("ConstantOptimization", false);
 
+        // set string
+        parser.file("test", "f.a().b");
+
+        try {
+            System.out.println();
+            System.out.println(parser.execute().getHeadNode());
+            System.out.println();
+        } catch (Exception e) {
+            System.out.println();
+            ExprException.printFancy(System.out, e, false);
+            System.out.println();
+        }
+    }
+
+    @Test
+    void test_BasicExec() {
+        // create parser
+        final ExpressionParser parser = new ExpressionParser()
+                .withSetting("ConstantOptimization", false);
+
         // specify string and parse
         try {
-            final String str = "7 * (-2 + --4 * 9) + 0b1101 / 0x63 * 9";
+            final String str = "8 * (-2 + --4 * 9) + 0b1101 / 0x69 * 9 + (6 * 7 * (4 + 5)) eeee";
             parser.file("test", str).execute();
 
             // print node tree
             System.out.println("");
-            System.out.println("{ " + parser.getHeadNode() + " }");
+            System.out.println(parser.getHeadNode());
 
             // evaluate
             ASTEvaluationContext ctx = new ASTEvaluationContext();
             parser.getHeadNode().evaluate(ctx);
-            System.out.println("Result: " + ctx.popValue());
+            System.out.println("-> " + ctx.popValue());
             System.out.println("");
         } catch (Exception e) {
             System.out.println();

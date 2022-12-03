@@ -1,8 +1,8 @@
-package net.orbyfied.j8.expr;
+package net.orbyfied.j8.expr.util;
 
 import net.orbyfied.j8.util.StringReader;
 
-public class StringLocation {
+public class StringLocation implements StringLocatable<Void> {
 
 //    public static final StringLocation EMPTY = new StringLocation("<unkown>", "", -1, -1);
     public static final StringLocation EMPTY = null;
@@ -21,8 +21,8 @@ public class StringLocation {
 
     String fn;
     String str;
-    int startIndex;
-    int endIndex;
+    public int startIndex;
+    public int endIndex;
     int ln = -1;
 
     public StringLocation(StringLocation loc, int startIndex, int endIndex) {
@@ -109,6 +109,21 @@ public class StringLocation {
                 .append(ac("0", f) + ac("37", f)).append(str.substring(es, ee))
                 .append(ac("0", f) + ac("90", f)).append("...");
         return b.toString();
+    }
+
+    @Override
+    public Void located(StringLocation loc) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Void located(StringLocatable<?> loc) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public StringLocation getLocation() {
+        return this;
     }
 
 }

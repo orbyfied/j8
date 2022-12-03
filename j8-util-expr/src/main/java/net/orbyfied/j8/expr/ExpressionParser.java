@@ -1,9 +1,6 @@
 package net.orbyfied.j8.expr;
 
-import net.orbyfied.j8.expr.ast.ASTNode;
-import net.orbyfied.j8.expr.ast.BinOpNode;
-import net.orbyfied.j8.expr.ast.ConstantNode;
-import net.orbyfied.j8.expr.ast.UnaryOpNode;
+import net.orbyfied.j8.expr.ast.*;
 import net.orbyfied.j8.expr.ast.exec.ASTEvaluationContext;
 import net.orbyfied.j8.expr.ast.exec.EvalValue;
 import net.orbyfied.j8.expr.error.ExprParserException;
@@ -11,6 +8,7 @@ import net.orbyfied.j8.expr.error.SyntaxError;
 import net.orbyfied.j8.expr.parser.Operator;
 import net.orbyfied.j8.expr.parser.Token;
 import net.orbyfied.j8.expr.parser.TokenType;
+import net.orbyfied.j8.expr.util.StringLocation;
 import net.orbyfied.j8.util.Reader;
 import net.orbyfied.j8.util.Sequence;
 import net.orbyfied.j8.util.StringReader;
@@ -85,6 +83,8 @@ public class ExpressionParser {
 
             // check for number
             if (StringReader.isDigit(c, 10)) {
+                int si = strReader.index();
+
                 int radix = 10;
 
                 // check if it is a radix spec
@@ -108,7 +108,10 @@ public class ExpressionParser {
                 double num;
                 if (radix == 10) num = strReader.collectDouble();
                 else             num = strReader.collectLong(radix);
-                tokens.add(new Token<>(TokenType.NUMBER_LITERAL, num));
+                tokens.add(new Token<>(TokenType.NUMBER_LITERAL, new EvalValue<>(
+                        EvalValue.TYPE_NUMBER, num))
+                        .located(fn, strReader, si, strReader.index() - 1)
+                );
 
                 continue;
             }
@@ -129,7 +132,8 @@ public class ExpressionParser {
                 strReader.next();
 
                 // add token
-                tokens.add(new Token<>(TokenType.STRING_LITERAL, b.toString())
+                tokens.add(new Token<>(TokenType.STRING_LITERAL,
+                        new EvalValue<>(EvalValue.TYPE_STRING, b.toString()))
                         .located(fn, strReader, si, strReader.index() - 1));
 
                 continue;
@@ -162,6 +166,10 @@ public class ExpressionParser {
                 TokenType tt = switch (c) {
                     case '(' -> TokenType.LEFT_PAREN;
                     case ')' -> TokenType.RIGHT_PAREN;
+                    case '[' -> TokenType.LEFT_BRACKET;
+                    case ']' -> TokenType.RIGHT_BRACKET;
+                    case '.' -> TokenType.DOT;
+                    case ',' -> TokenType.COMMA;
                     default  -> null;
                 };
                 if (tt != null) {
@@ -267,83 +275,75 @@ public class ExpressionParser {
     }
 
     private ASTNode node$factor() {
-        // get current
-        final Token<?>  tok = tokenReader.current();
-        if (tok != null) {
-            final TokenType tt = tok.getType();
+        // get token
+        Token<?> tok = tokenReader.current();
+        if (tok == null) throw new SyntaxError("EOF");
 
-            // current node
-            ASTNode node = null;
+        // return node
+        ASTNode node;
 
-            // check for unary op
-            if (tt == TokenType.OPERATOR) {
-                // get operator
-                Operator op = switch (tok.getValue(Operator.class)) {
-                    case SUB -> Operator.NEGATE;
-                    default  -> null;
-                };
-
-                // get operand
-                tokenReader.next();
-                ASTNode operand = node$factor();
-
-                // create node
-                ASTNode opNode = new UnaryOpNode(op, operand);
-
-                // if constant optimize
-                if (settingConstantOptimization && operand instanceof ConstantNode cn) {
-                    opNode.evaluate(constOptCtx);
-                    opNode = new ConstantNode(constOptCtx.popValue());
-                }
-
-                // return node
-                return opNode;
-            }
-
-            // check and parse constant
-            ASTNode numberNode;
-            if ((numberNode = node$Number()) != null)
-                node = numberNode;
-
-            // check for expression
-            if (tt == TokenType.LEFT_PAREN) {
-                tokenReader.next();
-                ASTNode tn;
-                if ((tn = node$expr()) != null) {
-                    if (tokenReader.current().getType() == TokenType.RIGHT_PAREN) {
-                        // register node
-                        node = tn;
-                        // advance past r paren
-                        tokenReader.next();
-                    } else {
-                        throw new SyntaxError("expected ')' to end expression");
-                    }
-                }
-            }
-
-            if (node == null) {
-                // throw exception
-                throw new SyntaxError("Expected NUMBER_LITERAL, OPERATOR, IDENTIFIER or LEFT_PAREN.")
-                        .located(tok.loc);
-            } else {
-                return node;
-            }
+        // check for number literal
+        if (tok.getType().name().contains("LITERAL")) {
+            node = new ConstantNode(tok.getValue());
+            tokenReader.next();
+            return node;
         }
+
+        // check for unary operator
+        if (tok.getType() == TokenType.OPERATOR) {
+            // get operand
+            tokenReader.next();
+            ASTNode operand = node$factor();
+
+            // get operator
+            Operator op = switch (tok.getValue(Operator.class)) {
+                case SUB -> Operator.NEGATE;
+                default  -> {
+                    throw new SyntaxError("invalid unary operator " + tok.getValue())
+                            .located(tok);
+                }
+            };
+
+            // create op node
+            node = new UnaryOpNode(op, operand);
+
+            // try and optimize
+            if (settingConstantOptimization) {
+                if (operand.getType() == ASTNodeType.CONSTANT) {
+                    operand.evaluate(constOptCtx);
+                    op.evaluate(constOptCtx);
+                    node = new ConstantNode(constOptCtx.popValue());
+                }
+            }
+
+            // return node
+            return node;
+        }
+
+        // check for expression
+        if (tok.getType() == TokenType.LEFT_PAREN) {
+            // advance past left and parse expr
+            tokenReader.next();
+            node = node$expr();
+
+            // check for and advance past right paren
+            if ((tok = tokenReader.current()) == null || tok.getType() != TokenType.RIGHT_PAREN)
+                throw new SyntaxError("expected ) to close expression")
+                        .located(tok);
+            tokenReader.next();
+
+            // create and return expression
+            return node;
+        }
+
+        // get operand
+        node = node$factor();
+
+        // TODO indexing
+        // TODO calls
 
         // throw exception
-        throw new SyntaxError("Expected NUMBER_LITERAL, OPERATOR, IDENTIFIER or LEFT_PAREN. Got EOF");
-    }
-
-    private ASTNode node$Number() {
-        Token<?> tok = tokenReader.current();
-        if (tok != null && tok.getType() == TokenType.NUMBER_LITERAL) {
-            tokenReader.next();
-            return new ConstantNode(
-                    new EvalValue<>(EvalValue.TYPE_NUMBER, tok.getValue(Double.class))
-            );
-        }
-
-        return null;
+        throw new SyntaxError("TODO").located(tok);
     }
 
     public ExpressionParser parse() {
@@ -352,6 +352,12 @@ public class ExpressionParser {
 
         // parse head node
         head = node$expr();
+
+        // check for end
+        Token<?> endTk = tokenReader.current();
+        if (endTk != null)
+            throw new SyntaxError("unexpected token after end of expression")
+                    .located(endTk);
 
         // return
         return this;

@@ -1,9 +1,10 @@
 package net.orbyfied.j8.expr.parser;
 
-import net.orbyfied.j8.expr.StringLocation;
+import net.orbyfied.j8.expr.util.StringLocatable;
+import net.orbyfied.j8.expr.util.StringLocation;
 import net.orbyfied.j8.util.StringReader;
 
-public class Token<T> {
+public class Token<T> implements StringLocatable<Token<T>> {
 
     // the location
     public StringLocation loc;

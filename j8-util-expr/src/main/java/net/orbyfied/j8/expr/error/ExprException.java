@@ -1,14 +1,16 @@
 package net.orbyfied.j8.expr.error;
 
-import net.orbyfied.j8.expr.StringLocation;
+import net.orbyfied.j8.expr.util.StringLocatable;
+import net.orbyfied.j8.expr.util.StringLocation;
 
 import java.io.PrintStream;
 
-public abstract class ExprException extends RuntimeException {
+@SuppressWarnings("rawtypes")
+public abstract class ExprException extends RuntimeException implements StringLocatable<RuntimeException> {
 
     public static void printFancy(PrintStream stream, Exception e, boolean debug) {
         stream.println("\u001B[31m" + e.getClass().getSimpleName() + ": " + e.getMessage() + "\u001B[0m");
-        StringLocation loc;
+        StringLocation loc = null;
         if (e instanceof ExprException le && (loc = le.getLocation()) != null) {
             stream.println("\u001B[31m  " + loc.toStringFancy(10, true) + "\u001B[0m");
         }
@@ -37,9 +39,5 @@ public abstract class ExprException extends RuntimeException {
     public ExprException(Throwable cause) {
         super(cause);
     }
-
-    public abstract StringLocation getLocation();
-
-    public abstract ExprException located(StringLocation loc);
 
 }

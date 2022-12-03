@@ -40,8 +40,8 @@ public class UnaryOpNode extends ASTNode {
     }
 
     @Override
-    public String getDataString() {
-        return "(" + operator.getSymbol() + value.toString() + ")";
+    public Object[] getDebugArgs() {
+        return new Object[] { operator, value };
     }
 
 }

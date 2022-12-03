@@ -7,6 +7,16 @@ import java.util.function.Function;
 @SuppressWarnings({ "unchecked", "rawtypes" })
 public class EvalValue<V> {
 
+    public static EvalValue<String> string(String str) {
+        return new EvalValue<>(TYPE_STRING, str);
+    }
+
+    public static EvalValue<Double> number(double d) {
+        return new EvalValue<>(TYPE_NUMBER, d);
+    }
+
+    /////////////////////////////////////////
+
     public static class Type<T> {
 
         // the type name
@@ -53,15 +63,11 @@ public class EvalValue<V> {
     public static final Type<?> TYPE_NUMBER           = new Type<>("number", 2, Double.class)
             .setToString(aDouble -> Double.toString(aDouble));
     public static final Type<?> TYPE_STRING           = new Type<>("string", 3, String.class)
-            .setToString(str -> str);
+            .setToString(str -> "\"" + str + "\"");
     public static final Type<?> TYPE_OBJECT_REFERENCE = new Type<>("reference", 4, Long.class)
             .setToString(aLong -> "obj" + Long.toHexString(aLong)); // holds all arrays, lists, tables and instances
-
-    // object types
-    public static final byte OBJECT_TYPE_ARRAY    = 0;
-    public static final byte OBJECT_TYPE_TABLE    = 1;
-    public static final byte OBJECT_TYPE_LIST     = 2;
-    public static final byte OBJECT_TYPE_INSTANCE = 3;
+    public static final Type<?> TYPE_FUNCTION         = new Type<>("function", 5, EvalFunction.class)
+            .setToString(evalFunction -> "function");
 
     // nil value
     public static final EvalValue<?> NIL = new EvalValue<>(TYPE_NIL, null);

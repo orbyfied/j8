@@ -1,34 +1,39 @@
 package net.orbyfied.j8.expr.parser;
 
 import net.orbyfied.j8.expr.ast.exec.ASTEvaluationContext;
+import net.orbyfied.j8.expr.ast.exec.EvalFunction;
 import net.orbyfied.j8.expr.ast.exec.EvalValue;
 
 import java.util.function.Consumer;
 
 public enum Operator {
 
+    // TODO: operator overloading
+
     // default operators
-    ADD("+", "ADD", ctx -> {
-        double a = ctx.popValue().requireType(EvalValue.TYPE_NUMBER).getValueAs();
-        double b = ctx.popValue().requireType(EvalValue.TYPE_NUMBER).getValueAs();
+    ADD("+", "add", ctx -> {
+        EvalValue<?> av = ctx.popValue();
+        EvalValue<?> bv = ctx.popValue();
+        double a = av.requireType(EvalValue.TYPE_NUMBER).getValueAs();
+        double b = bv.requireType(EvalValue.TYPE_NUMBER).getValueAs();
         ctx.pushValue(new EvalValue<>(EvalValue.TYPE_NUMBER, (double)(a + b)));
     }),
-    SUB("-", "SUB", ctx -> {
+    SUB("-", "sub", ctx -> {
         double a = ctx.popValue().requireType(EvalValue.TYPE_NUMBER).getValueAs();
         double b = ctx.popValue().requireType(EvalValue.TYPE_NUMBER).getValueAs();
         ctx.pushValue(new EvalValue<>(EvalValue.TYPE_NUMBER, (double)(a - b)));
     }),
-    MUL("*", "MUL", ctx -> {
+    MUL("*", "mul", ctx -> {
         double a = ctx.popValue().requireType(EvalValue.TYPE_NUMBER).getValueAs();
         double b = ctx.popValue().requireType(EvalValue.TYPE_NUMBER).getValueAs();
         ctx.pushValue(new EvalValue<>(EvalValue.TYPE_NUMBER, (double)(a * b)));
     }),
-    DIV("/", "DIV", ctx -> {
+    DIV("/", "div", ctx -> {
         double a = ctx.popValue().requireType(EvalValue.TYPE_NUMBER).getValueAs();
         double b = ctx.popValue().requireType(EvalValue.TYPE_NUMBER).getValueAs();
         ctx.pushValue(new EvalValue<>(EvalValue.TYPE_NUMBER, (double)(a / b)));
     }),
-    NEGATE("-", "NEGATE", ctx -> {
+    NEGATE("-", "negate", ctx -> {
         double n = ctx.popValue().requireType(EvalValue.TYPE_NUMBER).getValueAs();
         ctx.pushValue(new EvalValue<>(EvalValue.TYPE_NUMBER, -n));
     });
