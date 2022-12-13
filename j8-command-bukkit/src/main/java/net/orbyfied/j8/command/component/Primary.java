@@ -8,4 +8,6 @@ public interface Primary extends NodeComponent {
 
     boolean selects(Context ctx, StringReader reader);
 
+    int priority();
+
 }

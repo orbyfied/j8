@@ -8,7 +8,9 @@ import net.orbyfied.j8.command.annotation.CommandParameter;
 import net.orbyfied.j8.command.annotation.Subcommand;
 import net.orbyfied.j8.command.impl.BukkitCommandManager;
 import net.orbyfied.j8.command.argument.ArgumentTypes;
+import net.orbyfied.j8.command.minecraft.MinecraftArgumentTypes;
 import org.bukkit.ChatColor;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class J8TestPlugin extends JavaPlugin {
@@ -23,16 +25,27 @@ public class J8TestPlugin extends JavaPlugin {
         // register commands
 //        new BaseAnnotationProcessor(commandManager, new HelloCommand()).compile().register();
 
-        Node helloCmd = new Node("hello", null, null)
+        Node helloCmd = commandManager.command("hello")
+                .executes((ctx, cmd) -> {
+                    ctx.sender().sendMessage("hehehhehehehheheehehhehhe");
+                })
                 .thenExecute("hi", (ctx, cmd) -> {
                     ctx.sender().sendMessage(ChatColor.translateAlternateColorCodes('&',
                             ctx.getFlagValue("hi", String.class)));
                 })
                 .flag("hi", ArgumentTypes.STRING)
                 .root()
+                .thenExecute("a", (ctx, cmd) -> {
+                    ctx.sender().sendMessage("a");
+                })
+                .thenArgument("player", MinecraftArgumentTypes.ONLINE_PLAYER_DIRECT)
+                .thenExecute("b", (ctx, cmd) -> {
+                    ctx.sender().sendMessage(ctx.<Player>getArgument("player").getName());
+                })
+                .root()
                 .thenExecute("yo", (context, cmd) -> {
-                    String name = context.getArgument("yo:name");
-                    Integer num = context.getArgument("yo:num");
+                    String name = context.getArgument("name");
+                    Integer num = context.getArgument("num");
 
                     if (context.getFlagValue("fb", Boolean.class, false)) {
                         context.sender().sendMessage("hi " + name + "-" + num);
@@ -51,12 +64,13 @@ public class J8TestPlugin extends JavaPlugin {
                 .flag("fa", ArgumentTypes.STRING)
                 .flag("fb", 'b', ArgumentTypes.BOOLEAN, true)
                 .flag("fc", ArgumentTypes.DOUBLE)
-                .flag("fd", ArgumentTypes.LIST.instance(ArgumentTypes.VECTOR_3F))
+                .flag("fd", MinecraftArgumentTypes.ONLINE_PLAYER_DIRECT)
                 .thenArgument("name", ArgumentTypes.STRING)
                 .thenArgument("num", ArgumentTypes.INT)
+                .thenExecute("amogus", (ctx, cmd) -> {
+                    ctx.halt(true, "amogus-name: " + ctx.getArgument("name"));
+                })
                 .root();
-
-        commandManager.register(helloCmd);
     }
 
     @Override

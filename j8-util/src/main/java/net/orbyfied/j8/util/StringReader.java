@@ -271,12 +271,12 @@ public class StringReader {
 
     /* ----- Utilities ----- */
 
-    public void debugPrint(PrintStream stream) {
-        stream.println("[READER] current: '" + current() + "', index: " + index() + ", nv10: " + getDigit(current(), 10));
+    public void debugPrint(String s, PrintStream stream) {
+        stream.println("[READER:" + s + "] current: '" + current() + "', index: " + index() + ", nv10: " + getDigit(current(), 10));
     }
 
-    public void debugPrint() {
-        debugPrint(System.out);
+    public void debugPrint(String s) {
+        debugPrint(s, System.out);
     }
 
     public static boolean isDigit(char c, int radix) {

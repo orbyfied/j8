@@ -2,7 +2,7 @@ package net.orbyfied.j8.command.impl;
 
 import net.orbyfied.j8.command.*;
 import net.orbyfied.j8.command.component.Properties;
-import net.orbyfied.j8.command.minecraft.MinecraftParameterType;
+import net.orbyfied.j8.command.minecraft.MinecraftArgumentTypes;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
@@ -13,6 +13,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Uses the Bukkit command system to register
@@ -25,18 +26,31 @@ public class BukkitCommandManager extends CommandManager {
 
     private final Plugin plugin;
 
+    // the fallback prefix
+    private String fallbackPrefix;
+
     public BukkitCommandManager(Plugin plugin) {
         super();
         this.plugin = plugin;
+        this.fallbackPrefix = plugin.getName().toLowerCase(Locale.ROOT);
 
         ((DelegatingNamespacedTypeResolver)getTypeResolver())
-                .namespace("minecraft", MinecraftParameterType.typeResolver);
+                .namespace("minecraft", MinecraftArgumentTypes.typeResolver);
+    }
+
+    public BukkitCommandManager setFallbackPrefix(String fallbackPrefix) {
+        this.fallbackPrefix = fallbackPrefix;
+        return this;
+    }
+
+    public String getFallbackPrefix() {
+        return fallbackPrefix;
     }
 
     @Override
     protected void registerPlatform(Node root) {
         RegisteredBukkitCommand cmd = new RegisteredBukkitCommand(this, root);
-        commandMap.register(cmd.getLabel(), cmd);
+        commandMap.register(cmd.getLabel(), fallbackPrefix, cmd);
     }
 
     @Override
@@ -55,7 +69,9 @@ public class BukkitCommandManager extends CommandManager {
     }
 
     private static String stitchArgs(String label, String[] args) {
-        StringBuilder b = new StringBuilder(label);
+        String[] ls = label.split(":");
+        String   l  = ls.length == 1 ? ls[0] : ls[1];
+        StringBuilder b = new StringBuilder(l);
         for (String s : args)
             b.append(" ").append(s);
         return b.toString();
@@ -83,7 +99,6 @@ public class BukkitCommandManager extends CommandManager {
 
         protected RegisteredBukkitCommand(CommandManager engine,
                                           Node node) {
-
             super(node.getName(),
                     "",
                     "",

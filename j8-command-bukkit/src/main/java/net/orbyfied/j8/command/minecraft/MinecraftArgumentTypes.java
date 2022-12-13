@@ -17,26 +17,15 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 
-public class MinecraftParameterType {
-
-    public static final class MinecraftTypeResolver implements TypeResolver {
-
-        protected HashMap<String, ArgumentType<?>> types = new HashMap<>();
-
-        @Override
-        public ArgumentType<?> resolve(Identifier identifier) {
-            return types.get(identifier.getPath());
-        }
-
-    }
+public class MinecraftArgumentTypes {
 
     /** UTILITY CLASS */
-    private MinecraftParameterType() { }
+    private MinecraftArgumentTypes() { }
 
     /**
      * The singleton type resolver.
      */
-    public static final MinecraftTypeResolver typeResolver = new MinecraftTypeResolver();
+    public static final TypeResolver typeResolver = TypeResolver.memoryBacked();
 
     /**
      * Function to quickly create simple
@@ -91,7 +80,7 @@ public class MinecraftParameterType {
         };
 
         // register type
-        typeResolver.types.put(bid.getPath(), type);
+        typeResolver.register(type);
 
         // return
         return type;

@@ -1,7 +1,7 @@
 package net.orbyfied.j8.command.exception;
 
-import net.md_5.bungee.api.ChatColor;
 import net.orbyfied.j8.util.StringReader;
+import org.bukkit.ChatColor;
 
 /**
  * The location of an error in
@@ -62,59 +62,43 @@ public class ErrorLocation {
     }
 
     /**
-     * @see ErrorLocation#getLocationString(int, int)
-     * Defaults both {@code prevStart} and {@code prevEnd}
-     * to {@code 6}
+     * @see ErrorLocation#getLocationString(int)
+     * Defaults {@code off} to {@code 10}
      */
     public String getLocationString() {
-        return getLocationString(6, 6);
+        return getLocationString(10);
     }
 
     /**
      * Create a nicely formatted error location string.
-     * @param prevStart The preview length on the start.
-     * @param prevEnd The preview length on the end.
      * @return The string.
      * TODO: change to components with j8-message api
      */
-    public String getLocationString(int prevStart, int prevEnd) {
-        // create builder
-        StringBuilder b = new StringBuilder();
-
-        // append prefix
-        b.append(ChatColor.GREEN).append("...");
-
-        // append index
-        b.append(ChatColor.GRAY).append("[").append(getStartIndex()).append(":").append(getEndIndex()).append("]")
-                .append(" ");
-
-        // append substrings
+    public String getLocationString(int off) {
         String str = reader.getString();
 
-        // figure out locations
-        int maxIdx = str.length() - 1;
-        int startIndex0 = Math.max(Math.min(getStartIndex(), maxIdx), 0);
-        int endIndex0   = Math.max(Math.min(getEndIndex(), maxIdx), 0);
-        int startIndex  = Math.min(startIndex0, endIndex0);
-        int endIndex    = Math.max(startIndex0, endIndex0);
+        StringBuilder b = new StringBuilder();
+        b.append(org.bukkit.ChatColor.RED).append("(").append(fromIndex).append(":").append(toIndex).append(")")
+                .append(org.bukkit.ChatColor.RESET);
 
-        int pStartIndex = Math.max(Math.min(startIndex - prevStart, maxIdx), 0);
-        int pEndIndex   = Math.max(Math.min(endIndex   + prevEnd,   maxIdx), 0);
+        if (toIndex >= str.length())
+            str = str + " ";
 
-        // get all string parts
-        String subPrefix = str.substring(pStartIndex, startIndex);
-        String sub       = str.substring(startIndex,  endIndex);
-        String subSuffix = str.substring(endIndex,    pEndIndex);
+        final int l = str.length();
 
-        // append all parts formatted
-        b.append(ChatColor.GREEN).append(subPrefix);
-        b.append(ChatColor.RED).append(ChatColor.UNDERLINE).append(sub);
-        b.append(ChatColor.GREEN).append(subSuffix);
+        int ss = Math.max(0, Math.min(l, fromIndex - off));
+        int se = Math.max(0, Math.min(l, fromIndex));
+        int bs = Math.max(0, Math.min(l, fromIndex));
+        int be = Math.max(0, Math.min(l, toIndex + 1));
+        int es = Math.max(0, Math.min(l, toIndex + 1));
+        int ee = Math.max(0, Math.min(l, toIndex + off));
 
-        // append suffix
-        b.append(ChatColor.GREEN).append("...");
-
-        // return
+        b
+                .append(org.bukkit.ChatColor.RESET + "" + org.bukkit.ChatColor.DARK_GRAY).append("...")
+                .append(org.bukkit.ChatColor.RESET + "" + org.bukkit.ChatColor.GRAY).append(str.substring(ss, se))
+                .append(org.bukkit.ChatColor.RESET + "" + org.bukkit.ChatColor.RED + "" + org.bukkit.ChatColor.UNDERLINE).append(str.substring(bs, be))
+                .append(org.bukkit.ChatColor.RESET + "" + org.bukkit.ChatColor.GRAY).append(str.substring(es, ee))
+                .append(org.bukkit.ChatColor.RESET + "" + ChatColor.DARK_GRAY).append("...");
         return b.toString();
     }
 

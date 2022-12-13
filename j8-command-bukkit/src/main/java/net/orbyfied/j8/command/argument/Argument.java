@@ -1,6 +1,7 @@
 package net.orbyfied.j8.command.argument;
 
 import net.orbyfied.j8.command.*;
+import net.orbyfied.j8.command.argument.options.ArgumentOptions;
 import net.orbyfied.j8.command.component.Completer;
 import net.orbyfied.j8.command.component.Functional;
 import net.orbyfied.j8.command.component.Primary;
@@ -17,26 +18,31 @@ public class Argument
         extends AbstractNodeComponent
         implements Functional, Primary, Completer {
 
+    // the argument ID
     protected Identifier identifier;
 
+    // the argument type
     protected ArgumentType<?> type;
+    // the argument options
+    protected ArgumentOptions options;
 
-    protected LinkedHashMap<String, Supplier<Object>> options = new LinkedHashMap<>();
+    // the options - TODO: replace with ArgumentOptions object
+    protected LinkedHashMap<String, Supplier<Object>> optionMap = new LinkedHashMap<>();
 
     public Argument(Node node) {
         super(node);
         Node parent = node;
         while ((parent = parent.parent()).hasComponentOf(Argument.class)) { }
-        identifier = new Identifier(parent.getName(), node.getName());
+        identifier = new Identifier(null, node.getName());
     }
 
     public Argument setOption(String id, Supplier<Object> supplier) {
-        options.put(id, supplier);
+        optionMap.put(id, supplier);
         return this;
     }
 
     public Argument setOption(String id, Object supplied) {
-        options.put(id, () -> supplied);
+        optionMap.put(id, () -> supplied);
         return this;
     }
 
@@ -59,12 +65,12 @@ public class Argument
     }
 
     private void putOptions(Context context) {
-        for (Map.Entry<String, Supplier<Object>> entry : options.entrySet())
+        for (Map.Entry<String, Supplier<Object>> entry : optionMap.entrySet())
             context.setLocalOption(entry.getKey(), entry.getValue().get());
     }
 
     private void remOptions(Context context) {
-        for (String key : options.keySet())
+        for (String key : optionMap.keySet())
             context.unsetLocalOption(key);
     }
 
@@ -115,6 +121,11 @@ public class Argument
         boolean b = type.accepts(ctx, reader);
         remOptions(ctx);
         return b;
+    }
+
+    @Override
+    public int priority() {
+        return options != null ? options.priority() : 0;
     }
 
     @Override

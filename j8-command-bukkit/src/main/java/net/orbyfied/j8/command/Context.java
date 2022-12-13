@@ -98,6 +98,17 @@ public class Context {
      */
     protected Map<Flag<?>, Object> flagValues = new HashMap<>();
 
+    /**
+     * The foreign (unregistered) flag values.
+     * Always either a string or boolean.
+     */
+    protected Map<String, Object> foreignFlagValues = new HashMap<>();
+
+    /**
+     * The suggestion accumulator.
+     */
+    protected SuggestionAccumulator suggestions;
+
     /* ----- Basic Manipulation ----- */
 
     public Context canFormat(boolean canFormat) {
@@ -109,12 +120,21 @@ public class Context {
         return engine;
     }
 
-    public CommandSender sender() {
-        return sender;
+    @SuppressWarnings("unchecked")
+    public <S extends CommandSender> S sender() {
+        return (S) sender;
+    }
+
+    public boolean senderIs(Class<? extends CommandSender> cClass) {
+        return cClass.isAssignableFrom(sender.getClass());
     }
 
     public Target target() {
         return target;
+    }
+
+    public boolean isSuggesting() {
+        return target == Target.SUGGEST;
     }
 
     public String intermediateText() {
@@ -140,6 +160,10 @@ public class Context {
     public Context target(Target target) {
         this.target = target;
         return this;
+    }
+
+    public SuggestionAccumulator suggestions() {
+        return suggestions;
     }
 
     public Node rootCommand() {
@@ -207,6 +231,14 @@ public class Context {
 
     public <T> T getArgument(String id, Class<T> tClass) {
         return getArgument(Identifier.of(id), tClass);
+    }
+
+    public boolean hasArgument(Identifier identifier) {
+        return argValues.containsKey(identifier);
+    }
+
+    public boolean hasArgument(String id) {
+        return hasArgument(Identifier.of(id));
     }
 
     public Context setArgument(Identifier id, Object o) {
@@ -314,12 +346,16 @@ public class Context {
 
     @SuppressWarnings("unchecked")
     public <T> T getFlagValue(String name) {
-        return (T) getFlagValue(flagsByName.get(name));
+        Flag<?> flag = flagsByName.get(name);
+        if (flag == null)
+            return (T) foreignFlagValues.get(name);
+        else
+            return (T) getFlagValue(flag);
     }
 
     @SuppressWarnings("unchecked")
     public <T> T getFlagValue(String name, Class<T> tClass) {
-        return (T) flagValues.get(flagsByName.get(name));
+        return (T) getFlagValue(name);
     }
 
     @SuppressWarnings("unchecked")
@@ -344,10 +380,9 @@ public class Context {
     public <T> T getFlagValue(String name, Class<T> tClass, T ifUnset) {
         Flag<?> flag = flagsByName.get(name);
         if (flag == null)
-            return ifUnset;
-        if (!flagValues.containsKey(flag))
-            return ifUnset;
-        return (T) getFlagValue(flag);
+            return (T) foreignFlagValues.getOrDefault(name, ifUnset);
+        else
+            return getFlagValue(flag, ifUnset);
     }
 
     ///////////////////////////////////

@@ -57,7 +57,7 @@ public class BasicTest {
 
         // specify string and parse
         try {
-            final String str = "8 * (-2 + --4 * 9) + 0b1101 / 0x69 * 9 + (6 * 7 * (4 + 5)) eeee";
+            final String str = "8 * (-2 + --4 * 9.9) + 0b1101 / 0x69 * 9 + (6 * 7 * (4 + 5.25))";
             parser.file("test", str).execute();
 
             // print node tree

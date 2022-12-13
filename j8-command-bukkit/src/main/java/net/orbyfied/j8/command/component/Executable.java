@@ -69,6 +69,11 @@ public class Executable
     }
 
     @Override
+    public int priority() {
+        return 999;
+    }
+
+    @Override
     public void walked(Context ctx, StringReader reader) {
         // skip over the label
         // this is important because at this

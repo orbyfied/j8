@@ -1,12 +1,23 @@
 package net.orbyfied.j8.command;
 
 import java.util.Stack;
+import java.util.function.BiPredicate;
 
 public abstract class SuggestionAccumulator {
+
+    // the context
+    Context context;
+
+    public SuggestionAccumulator withContext(Context context) {
+        this.context = context;
+        return this;
+    }
 
     // modifier stacks
     final Stack<String> prefixStack = new Stack<>();
     final Stack<String> suffixStack = new Stack<>();
+    // filter stack
+    final Stack<BiPredicate<Context, String>> filterStack = new Stack<>();
 
     public SuggestionAccumulator suggest(Object o) {
         if (o == null)
@@ -18,6 +29,12 @@ public abstract class SuggestionAccumulator {
             str.insert(0, prefix);
         for (String suffix : suffixStack)
             str.append(suffix);
+
+        // filter
+        String s = str.toString();
+        for (BiPredicate<Context, String> filter : filterStack)
+            if (!filter.test(context, s))
+                return this;
 
         // suggest
         suggest0(str.toString());
@@ -31,6 +48,16 @@ public abstract class SuggestionAccumulator {
     protected abstract void unsuggest0(String s);
 
     /* ---- Data ---- */
+
+    public SuggestionAccumulator pushFilter(BiPredicate<Context, String> predicate) {
+        filterStack.push(predicate);
+        return this;
+    }
+
+    public SuggestionAccumulator popFilter() {
+        filterStack.pop();
+        return this;
+    }
 
     public SuggestionAccumulator pushPrefix(String s) {
         prefixStack.push(s);

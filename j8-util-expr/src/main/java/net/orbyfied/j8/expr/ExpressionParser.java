@@ -298,11 +298,18 @@ public class ExpressionParser {
             // get operator
             Operator op = switch (tok.getValue(Operator.class)) {
                 case SUB -> Operator.NEGATE;
+                case ADD -> null;
                 default  -> {
                     throw new SyntaxError("invalid unary operator " + tok.getValue())
                             .located(tok);
                 }
             };
+
+            // check for null (no operation)
+            if (op == null) {
+                node = operand;
+                return node;
+            }
 
             // create op node
             node = new UnaryOpNode(op, operand);

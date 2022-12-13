@@ -36,10 +36,9 @@ public class Identifier implements Cloneable {
         if (components.size() < 1)
             throw new MalformedIdentifierException(in, Identifier.class);
         if (components.size() < 2) {
-            String[] tmp = new String[2];
-            tmp[1] = components.get(0);
-            tmp[0] = null;
-            components = Arrays.asList(tmp);
+            out.namespace = null;
+            out.path      = components.get(0);
+            return out;
         }
 
         out.namespace = components.get(0);
