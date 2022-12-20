@@ -10,12 +10,7 @@ public interface Accumulator<T> {
 
     static <S, D> Accumulator<S> mapped(Accumulator<D> destination,
                                         Function<S, D> mapper) {
-        return new Accumulator<>() {
-            @Override
-            public void add(S item) {
-                destination.add(mapper.apply(item));
-            }
-        };
+        return item -> destination.add(mapper.apply(item));
     }
 
 }

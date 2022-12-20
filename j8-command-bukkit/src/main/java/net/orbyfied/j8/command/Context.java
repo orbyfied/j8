@@ -1,6 +1,8 @@
 package net.orbyfied.j8.command;
 
 import net.md_5.bungee.api.ChatColor;
+import net.orbyfied.j8.command.argument.Argument;
+import net.orbyfied.j8.command.argument.options.ArgumentOptions;
 import net.orbyfied.j8.command.component.Executable;
 import net.orbyfied.j8.command.exception.CommandHaltException;
 import net.orbyfied.j8.command.argument.Flag;
@@ -39,11 +41,6 @@ public class Context {
     protected final HashMap<Identifier, Object> argValues = new HashMap<>();
 
     /**
-     * Options usable in parsing.
-     */
-    protected final HashMap<Identifier, Object> options = new HashMap<>();
-
-    /**
      * The command engine.
      */
     protected final CommandManager engine;
@@ -72,11 +69,6 @@ public class Context {
      * The current node we are at.
      */
     protected Node current;
-
-    /**
-     * The last/current executable node.
-     */
-    protected Executable currentExecutable;
 
     /**
      * All flags registered.
@@ -116,7 +108,7 @@ public class Context {
         return this;
     }
 
-    public CommandManager engine() {
+    public CommandManager manager() {
         return engine;
     }
 
@@ -174,12 +166,18 @@ public class Context {
         return reader;
     }
 
-    public Executable currentExecutable() {
-        return currentExecutable;
-    }
-
     public Node currentNode() {
         return current;
+    }
+
+    @SuppressWarnings("unchecked")
+    public <O extends ArgumentOptions> O argumentOptions(Class<O> oClass) {
+        Argument argument = currentNode().getComponent(Argument.class);
+        ArgumentOptions options;
+        if (argument == null || (options = argument.getOptions()) == null) return null;
+        if (!oClass.isAssignableFrom(options.getClass()))
+            return null;
+        return (O) options;
     }
 
     public Context halt(boolean success, String message) {
@@ -247,7 +245,7 @@ public class Context {
     }
 
     public Context setArgument(String id, Object o) {
-        return setOption(Identifier.of(id), o);
+        return setArgument(Identifier.of(id), o);
     }
 
     public Context unsetArgument(Identifier id) {
@@ -257,56 +255,6 @@ public class Context {
 
     public Context unsetArgument(String id) {
         return unsetArgument(Identifier.of(id));
-    }
-
-    /* ----- Options ----- */
-
-    public HashMap<Identifier, Object> getOptions() {
-        return argValues;
-    }
-
-    public <T> Optional<T> getLocalOption(String identifier, Class<T> tClass) {
-        return getOption(new Identifier(current.name, identifier));
-    }
-
-    public <T> Optional<T> getLocalOption(String identifier) {
-        return getOption(new Identifier(current.name, identifier));
-    }
-
-    public Context setLocalOption(String identifier, Object o) {
-        return setOption(new Identifier(current.name, identifier), o);
-    }
-
-    public Context unsetLocalOption(String identifier) {
-        return unsetOption(new Identifier(current.name, identifier));
-    }
-
-    @SuppressWarnings("unchecked")
-    public <T> Optional<T> getOption(Identifier identifier) {
-        return (Optional<T>) Optional.ofNullable(options.get(identifier));
-    }
-
-    public <T> Optional<T> getOption(String identifier) {
-        return getOption(Identifier.of(identifier));
-    }
-
-    public Context setOption(Identifier identifier, Object o) {
-        options.put(identifier, o);
-        return this;
-    }
-
-    public Context setOption(String id, Object o) {
-        return setOption(Identifier.of(id), o);
-    }
-
-    public Context unsetOption(Identifier id) {
-        options.remove(id);
-        return this;
-    }
-
-    public Context unsetOption(String id) {
-        options.remove(Identifier.of(id));
-        return this;
     }
 
     /* ----- Flags ----- */

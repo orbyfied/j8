@@ -1,6 +1,7 @@
 package net.orbyfied.j8.command.argument;
 
 import net.orbyfied.j8.command.Context;
+import net.orbyfied.j8.command.argument.options.StringArgumentOptions;
 import net.orbyfied.j8.command.exception.ErrorLocation;
 import net.orbyfied.j8.command.SuggestionAccumulator;
 import net.orbyfied.j8.command.exception.NodeParseException;
@@ -405,14 +406,14 @@ public class ArgumentTypes {
                     reader.next();
                     return reader.collect(c -> c != '"', 1);
                 }
+                StringArgumentOptions options;
+                if ((options = context.argumentOptions(StringArgumentOptions.class)) != null &&
+                        options.readFar()) {
+                    return reader.collect();
+                }
                 return reader.collect(c -> c != ' ');
             }),
-            (context, builder, s) -> builder.append("\"").append(s).append("\""),
-            ((CompleterFunc) (ctx, reader, acc) -> {
-                ctx.<Consumer<SuggestionAccumulator>>getOption(SUGGESTER_OPTION).ifPresent(
-                        k -> k.accept(acc)
-                );
-            })
+            (context, builder, s) -> builder.append("\"").append(s).append("\"")
     );
 
     /**
@@ -438,14 +439,7 @@ public class ArgumentTypes {
     public static final ArgumentType<Identifier> IDENTIFIER = of(Identifier.class, "system:identifier",
             (context, stringReader) -> true,
             (Context context, StringReader reader) -> Identifier.of(STRING.parse(context, reader)),
-            (context, builder, s) -> builder.append(s.toString()),
-
-            /* suggester */
-            ((BiConsumer<Context, SuggestionAccumulator>)(context, suggestions) -> {
-                context.<KeyProvider<Identifier>>getLocalOption(KEY_PROVIDER_OPTION).ifPresent(
-                    p -> p.provideKeys(suggestions::suggest)
-                );
-            })
+            (context, builder, s) -> builder.append(s.toString())
     );
 
 
@@ -563,7 +557,7 @@ public class ArgumentTypes {
 
     public static final ArgumentType<ArgumentType> TYPE = of(ArgumentType.class, "system:type",
             (context, reader) -> true,
-            (context, reader) -> context.engine().getTypeResolver().compile(TYPE_IDENTIFIER.parse(context, reader)),
+            (context, reader) -> context.manager().getTypeResolver().compile(TYPE_IDENTIFIER.parse(context, reader)),
             (context, builder, o) -> builder.append(o.getIdentifier())
     );
 
@@ -585,5 +579,90 @@ public class ArgumentTypes {
             }),
             (context, builder, aClass) -> builder.append(aClass.getName())
     );
+
+    /////////////////////////////////////////////////////////////
+    ///// ANONYMOUS TYPES
+    /////////////////////////////////////////////////////////////
+
+    public static <E extends Enum<?>> ArgumentType<E> ofEnum(Class<E> eClass) {
+        // collect values
+        final Map<String, E> values = Arrays.stream(eClass.getEnumConstants())
+                .collect(HashMap::new, (stringEHashMap, e) -> stringEHashMap.put(e.name().toLowerCase(Locale.ROOT), e), HashMap::putAll);
+
+        final TypeIdentifier id = TypeIdentifier.of("generated:enum." + eClass.getSimpleName());
+        return new ArgumentType<E>() {
+            @Override
+            public TypeIdentifier getBaseIdentifier() {
+                return id;
+            }
+
+            @Override
+            public Class<?> getType() {
+                return eClass;
+            }
+
+            @Override
+            public boolean accepts(Context context, StringReader reader) {
+                String name = reader.collect(c -> c != ' ');
+                return values.containsKey(name.toLowerCase(Locale.ROOT));
+            }
+
+            @Override
+            public E parse(Context context, StringReader reader) {
+                String name = reader.collect(c -> c != ' ');
+                return values.get(name.toLowerCase(Locale.ROOT));
+            }
+
+            @Override
+            public void write(Context context, StringBuilder builder, E v) {
+                builder.append(v.name());
+            }
+
+            @Override
+            public void suggest(Context context, SuggestionAccumulator suggestions) {
+                for (E v : values.values()) {
+                    suggestions.suggest(v.name().toLowerCase(Locale.ROOT));
+                }
+            }
+        };
+    }
+
+    public static <T> ArgumentType<T> withSuggester(ArgumentType<T> type,
+                                                    CompleterFunc func) {
+        return new ArgumentType<T>() {
+            @Override
+            public TypeIdentifier getBaseIdentifier() {
+                return type.getBaseIdentifier();
+            }
+
+            @Override
+            public Class<?> getType() {
+                return type.getType();
+            }
+
+            @Override
+            public boolean accepts(Context context, StringReader reader) {
+                return type.accepts(context, reader);
+            }
+
+            @Override
+            public T parse(Context context, StringReader reader) {
+                return type.parse(context, reader);
+            }
+
+            @Override
+            public void write(Context context, StringBuilder builder, T v) {
+                type.write(context, builder, v);
+            }
+
+            @Override
+            public void suggest(Context context, SuggestionAccumulator suggestions) {
+                type.suggest(context, suggestions);
+                if (func != null) {
+                    func.doSuggestions(context, context.reader().branch(), suggestions);
+                }
+            }
+        };
+    }
 
 }

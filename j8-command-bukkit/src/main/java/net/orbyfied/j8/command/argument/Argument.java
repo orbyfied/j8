@@ -1,6 +1,7 @@
 package net.orbyfied.j8.command.argument;
 
 import net.orbyfied.j8.command.*;
+import net.orbyfied.j8.command.argument.options.ArgumentCompleter;
 import net.orbyfied.j8.command.argument.options.ArgumentOptions;
 import net.orbyfied.j8.command.component.Completer;
 import net.orbyfied.j8.command.component.Functional;
@@ -36,13 +37,12 @@ public class Argument
         identifier = new Identifier(null, node.getName());
     }
 
-    public Argument setOption(String id, Supplier<Object> supplier) {
-        optionMap.put(id, supplier);
-        return this;
+    public ArgumentOptions getOptions() {
+        return options;
     }
 
-    public Argument setOption(String id, Object supplied) {
-        optionMap.put(id, () -> supplied);
+    public Argument setOptions(ArgumentOptions options) {
+        this.options = options;
         return this;
     }
 
@@ -55,23 +55,14 @@ public class Argument
         return identifier;
     }
 
+    @SuppressWarnings("unchecked")
     public Argument setType(ArgumentType<?> type) {
-        this.type = type;
+        this.type = (ArgumentType<?>) type;
         return this;
     }
 
     public ArgumentType<?> getType() {
         return type;
-    }
-
-    private void putOptions(Context context) {
-        for (Map.Entry<String, Supplier<Object>> entry : optionMap.entrySet())
-            context.setLocalOption(entry.getKey(), entry.getValue().get());
-    }
-
-    private void remOptions(Context context) {
-        for (String key : optionMap.keySet())
-            context.unsetLocalOption(key);
     }
 
     @Override
@@ -80,9 +71,6 @@ public class Argument
         int startIndex = reader.index();
         // value
         Object v;
-
-        // add options
-        putOptions(ctx);
 
         try {
             // parse value
@@ -105,9 +93,6 @@ public class Argument
 
         }
 
-        // remove options
-        remOptions(ctx);
-
         // set value
         ctx.setArgument(identifier, v);
     }
@@ -117,10 +102,7 @@ public class Argument
 
     @Override
     public boolean selects(Context ctx, StringReader reader) {
-        putOptions(ctx);
-        boolean b = type.accepts(ctx, reader);
-        remOptions(ctx);
-        return b;
+        return type.accepts(ctx, reader);
     }
 
     @Override
@@ -130,9 +112,12 @@ public class Argument
 
     @Override
     public void complete(Context context, SuggestionAccumulator suggestions, StringReader reader) {
-        putOptions(context);
         type.suggest(context, suggestions);
-        remOptions(context);
+        if (options != null) {
+            for (ArgumentCompleter completer : options.completers()) {
+                completer.complete(this, context, suggestions);
+            }
+        }
     }
 
 }

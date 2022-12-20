@@ -21,7 +21,6 @@ public abstract class Suggester extends AbstractNodeComponent {
                 // get partial
                 String partial = reader.branch().collect();
                 builder.pushFilter((context, s) -> s.contains(partial));
-                System.out.println("Partial: " + partial);
 
                 // for each child node
                 for (Node child : node.getChildren()) {

@@ -1,6 +1,7 @@
 package net.orbyfied.j8.command;
 
 import net.orbyfied.j8.command.argument.ArgumentTypes;
+import net.orbyfied.j8.command.argument.options.ArgumentOptions;
 import net.orbyfied.j8.command.component.*;
 import net.orbyfied.j8.command.component.Properties;
 import net.orbyfied.j8.command.exception.CommandException;
@@ -36,9 +37,43 @@ public class Node {
     static final Node NODE_UNKNOWN = new Node("<unknown>", null, null)
             .executes(null, (ctx, cmd) -> {
                 if (!ctx.isSuggesting()) {
-                    ctx.fail("Unknown sub-command " + ChatColor.WHITE + ctx.getOption("__fast_node_name").orElse(null));
+                    ctx.fail("Unknown sub-command " + ChatColor.WHITE + ctx.getArgument("__fast_node_name"));
                 }
             });
+
+    /**
+     * The blank node selected when the
+     * string is only whitespace.
+     */
+    static final Node NODE_BLANK = new Node("<blank>", null, null);
+
+    static {
+        NODE_BLANK.withComponent(new BlankNodeSelector(NODE_BLANK));
+    }
+
+    /**
+     * Primary component for the blank node.
+     */
+    static class BlankNodeSelector extends AbstractNodeComponent implements Primary {
+
+        public BlankNodeSelector(Node node) {
+            super(node);
+        }
+
+        @Override
+        public boolean selects(Context ctx, StringReader reader) {
+//            reader.debugPrint("pre collect ws");
+            reader.collect(Character::isWhitespace);
+//            reader.debugPrint("post collect ws");
+            return reader.current() == StringReader.DONE;
+        }
+
+        @Override
+        public int priority() {
+            return Integer.MAX_VALUE;
+        }
+
+    }
 
     ///////////////////////////////////////////////////
 
@@ -100,6 +135,9 @@ public class Node {
         this.parent = parent;
         this.root = Objects.requireNonNullElse(root, this);
 
+        // add blank node child
+        addChild(NODE_BLANK);
+
         // add default suggester
         withComponent(Suggester.defaults(this));
     }
@@ -138,6 +176,9 @@ public class Node {
             Node last,
             StringReader fReader
     ) {
+        // set current node
+        context.current = this;
+
         // get root node
         Node root = context.rootCommand();
 
@@ -147,9 +188,9 @@ public class Node {
         // collect whitespace
         while (Character.isWhitespace(fReader.current()))
             fReader.next();
-        if (fReader.current() == StringReader.DONE) {
-            return executeOrBacktrack(context);
-        }
+//        if (fReader.current() == StringReader.DONE) {
+//            return executeOrBacktrack(context);
+//        }
 
         // branch string reader for parsing
         StringReader reader = fReader.branch();
@@ -274,17 +315,16 @@ public class Node {
         }
 
         // get next node and walk
+        reader.prev();
         Node next = findNext(context, reader);
         if (next == null) /* end of chain */ {
             // suggest
             if (context.isSuggesting()) {
                 // suggest flags
                 for (Runnable flagSuggestion : flagCompletions) {
-                    System.out.println(flagSuggestion);
                     flagSuggestion.run();
                 }
 
-                // suggest nodes
                 if (last != null) {
                     // use last node to suggest
                     Suggester suggester;
@@ -308,10 +348,16 @@ public class Node {
     }
 
     public Node findNext(Context context, StringReader reader) {
+        // check for end
+        if (reader.current() == StringReader.DONE)
+            return null;
+
+        reader.next();
+
         // try fast mapped executable first
         String name = reader.branch().collect(c -> c != ' ');
         Node node = fastMappedChildren.get(name);
-        context.setOption("__fast_node_name", name);
+        context.setArgument("__fast_node_name", name);
         if (node != null) {
             return node;
         }
@@ -320,18 +366,18 @@ public class Node {
         Primary highest = null;
         for (Node child : children) {
             Primary primary = child.getComponentOf(Primary.class);
+            if (primary == null)
+                continue;
             if (primary.selects(context, reader.branch())) {
                 if (highest == null || primary.priority() > highest.priority())
                     highest = primary;
             }
         }
 
-        if (highest != null)
+        if (highest != null) {
+            System.out.println(highest.getNode().getName());
             return highest.getNode();
-
-        // check for end
-        if (reader.current() == StringReader.DONE)
-            return null;
+        }
 
         // return unknown
         return NODE_UNKNOWN;
@@ -340,6 +386,10 @@ public class Node {
     ////////////////////////////////////////////////
     //// CONFIGURATION
     ////////////////////////////////////////////////
+
+    public Node node() {
+        return this;
+    }
 
     /* Getters. */
 
@@ -475,7 +525,8 @@ public class Node {
     /* Children. */
 
     public Node addChild(Node node) {
-        Objects.requireNonNull(node, "node cannot be null");
+        if (node == null)
+            return null;
         children.add(node);
         childrenByName.put(node.name, node);
         if (node.componentsByClass.containsKey(Executable.class))
@@ -507,44 +558,17 @@ public class Node {
         return curr;
     }
 
-    public Node getSubnode(String name) {
+    public Node getChild(String name) {
         return childrenByName.get(name);
     }
 
-    public Node getOrCreateSubnode(String name, Function<Node, Node> constructor) {
+    public Node getOrCreateChild(String name, Function<Node, Node> constructor) {
         Node node;
-        if ((node = getSubnode(name)) != null)
+        if ((node = getChild(name)) != null)
             return node;
         node = constructor.apply(this);
         addChild(node);
         return node;
-    }
-
-    public Primary getNextSubnode(Context ctx, StringReader reader) {
-        if (reader.current() == StringReader.DONE)
-            return null;
-        Node node;
-        if ((node = fastMappedChildren.get(reader.branch().collect(c -> c != ' '))) != null)
-            return node.getComponentOf(Primary.class);
-        Primary sel;
-        for (Node child : children)
-            if ((sel = child.getComponentOf(Primary.class)).selects(ctx, reader.branch()))
-                return sel;
-        return null;
-    }
-
-    public Node processWalked(Context context, StringReader reader) {
-        for (NodeComponent component : components)
-            if (!(component instanceof Primary) && component instanceof Functional fc)
-                fc.walked(context, reader);
-        return this;
-    }
-
-    public Node processExecute(Context context) {
-        for (NodeComponent component : components)
-            if (!(component instanceof Primary) && component instanceof Functional fc)
-                fc.execute(context);
-        return this;
     }
 
     /* QOL Methods. */
@@ -583,7 +607,15 @@ public class Node {
     }
 
     public Node argument(ArgumentType<?> type) {
-        component(Argument.class, Argument::new).setType(type);
+        component(Argument.class, Argument::new)
+                .setType(type);
+        return this;
+    }
+
+    public Node argument(ArgumentType<?> type, ArgumentOptions options) {
+        component(Argument.class, Argument::new)
+                .setType(type)
+                .setOptions(options);
         return this;
     }
 
@@ -632,6 +664,35 @@ public class Node {
                              ArgumentType<?> type,
                              BiConsumer<Node, Argument> consumer) {
         Node node = thenArgument(name, type);
+        if (consumer != null)
+            consumer.accept(node, node.getComponent(Argument.class));
+        return this;
+    }
+
+    public Node thenArgument(String name,
+                             ArgumentType<?> type,
+                             ArgumentOptions options) {
+        Node node = new Node(name, this, root);
+        node.argument(type, options);
+        this.addChild(node);
+        return node;
+    }
+
+    public Node thenArgument(String name,
+                             ArgumentType<?> type,
+                             ArgumentOptions options,
+                             Consumer<Node> consumer) {
+        Node node = thenArgument(name, type, options);
+        if (consumer != null)
+            consumer.accept(node);
+        return this;
+    }
+
+    public Node thenArgument(String name,
+                             ArgumentType<?> type,
+                             ArgumentOptions options,
+                             BiConsumer<Node, Argument> consumer) {
+        Node node = thenArgument(name, type, options);
         if (consumer != null)
             consumer.accept(node, node.getComponent(Argument.class));
         return this;

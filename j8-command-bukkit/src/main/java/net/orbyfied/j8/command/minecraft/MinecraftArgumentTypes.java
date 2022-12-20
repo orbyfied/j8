@@ -5,13 +5,11 @@ import net.orbyfied.j8.command.SuggestionAccumulator;
 import net.orbyfied.j8.command.argument.ArgumentType;
 import net.orbyfied.j8.command.argument.TypeIdentifier;
 import net.orbyfied.j8.command.argument.TypeResolver;
-import net.orbyfied.j8.registry.Identifier;
 import net.orbyfied.j8.util.StringReader;
 import net.orbyfied.j8.util.functional.TriConsumer;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
-import java.util.HashMap;
 import java.util.UUID;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;

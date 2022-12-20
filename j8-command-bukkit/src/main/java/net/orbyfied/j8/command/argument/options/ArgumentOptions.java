@@ -7,26 +7,26 @@ import java.util.List;
 public class ArgumentOptions {
 
     // the custom completers
-    protected List<ArgumentCompleter<?>> completers = new ArrayList<>();
+    protected List<ArgumentCompleter> completers = new ArrayList<>();
 
     // the argument priority
     protected int priority = 0;
 
-    public ArgumentOptions withCompleter(ArgumentCompleter<?> completer) {
+    public ArgumentOptions withCompleter(ArgumentCompleter completer) {
         this.completers.add(completer);
         return this;
     }
 
-    public ArgumentOptions completers(List<ArgumentCompleter<?>> completers) {
+    public ArgumentOptions completers(List<ArgumentCompleter> completers) {
         this.completers = completers;
         return this;
     }
 
-    public ArgumentOptions completers(ArgumentCompleter<?>... completers) {
+    public ArgumentOptions completers(ArgumentCompleter... completers) {
         return completers(Arrays.asList(completers));
     }
 
-    public List<ArgumentCompleter<?>> completers() {
+    public List<ArgumentCompleter> completers() {
         return completers;
     }
 

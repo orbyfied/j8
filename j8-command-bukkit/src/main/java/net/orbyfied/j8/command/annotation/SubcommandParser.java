@@ -75,7 +75,7 @@ public class SubcommandParser {
                 String component = reader.collect(c -> c != ' ', 1);
 
                 // create and set node
-                current = current.getOrCreateSubnode(component,
+                current = current.getOrCreateChild(component,
                         parent -> new Node(component, parent, parent.root())
                                 .executes(null));
 
@@ -141,7 +141,7 @@ public class SubcommandParser {
                 String name = reader.collect(c -> c != '>' && c != ']', 1);
 
                 // get or create node
-                Node paramNode = current.getSubnode(name);
+                Node paramNode = current.getChild(name);
                 if (paramNode == null) {
                     // parse type into type identifier and resolve
                     TypeIdentifier tid = TypeIdentifier.of(type);
@@ -151,7 +151,7 @@ public class SubcommandParser {
                     Identifier pid = new Identifier(null, name);
 
                     // create node
-                    paramNode = current.getOrCreateSubnode(name,
+                    paramNode = current.getOrCreateChild(name,
                             parent -> new Node(name, parent, parent.root())
                                     .argument(pt).getComponent(Argument.class)
                                     .setIdentifier(pid)

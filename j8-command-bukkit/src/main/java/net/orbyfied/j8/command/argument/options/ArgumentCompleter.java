@@ -4,9 +4,8 @@ import net.orbyfied.j8.command.Context;
 import net.orbyfied.j8.command.SuggestionAccumulator;
 import net.orbyfied.j8.command.argument.Argument;
 
-public interface ArgumentCompleter<O extends ArgumentOptions> {
+public interface ArgumentCompleter {
 
-    void complete(Argument argument, Context context, O options,
-                  SuggestionAccumulator accumulator);
+    void complete(Argument argument, Context context, SuggestionAccumulator accumulator);
 
 }

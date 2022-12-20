@@ -2,6 +2,7 @@ package net.orbyfied.j8.command.argument;
 
 import net.orbyfied.j8.command.Context;
 import net.orbyfied.j8.command.SuggestionAccumulator;
+import net.orbyfied.j8.command.argument.options.ArgumentOptions;
 import net.orbyfied.j8.util.StringReader;
 
 public interface ArgumentType<T> {
