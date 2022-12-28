@@ -1,0 +1,4 @@
+name: J8BukkitBootstrap
+main: net.orbyfied.j8.BukkitBootstrapPlugin
+version: 1.0.0
+api-version: 1.19

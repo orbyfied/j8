@@ -1,17 +1,11 @@
 plugins {
-    // java
-    id 'java'
-    id 'java-library'
-
-    // for minecraft
-    id ("io.papermc.paperweight.userdev") version "1.3.5" apply false
+    id 'java' // java
 
     // for shading in dependencies
     id "com.github.johnrengelman.shadow" version "7.1.2"
 
-    // package publishing
-    id 'maven-publish'
-    id 'signing'
+    // for minecraft
+    id ("io.papermc.paperweight.userdev") version "1.3.5" apply false
 }
 
 ext {
@@ -21,13 +15,10 @@ ext {
 
     // Testing
     hasTesting = false
-
-    // Artifact
-    desc = "Bukkit/Spigot command framework."
 }
 
 // Properties
-version '2.0.0'
+version '0.1.0'
 
 apply from: '../buildSrc/j8-module.gradle', to: project
 
@@ -36,8 +27,11 @@ apply from: '../buildSrc/j8-module.gradle', to: project
 dependencies {
 
     implementation project(":j8-util")
+    implementation project(":j8-event")
     implementation project(":j8-registry")
     implementation project(":j8-util-bukkit")
+    implementation project(":j8-config-bukkit")
+    implementation project(":j8-command-spigot")
 
     // External Libraries
     // ...

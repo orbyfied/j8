@@ -1,24 +1,21 @@
 package net.orbyfied.j8.command.minecraft;
 
+import net.md_5.bungee.api.ProxyServer;
+import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.orbyfied.j8.command.Context;
 import net.orbyfied.j8.command.SuggestionAccumulator;
+import net.orbyfied.j8.command.argument.Argument;
 import net.orbyfied.j8.command.argument.ArgumentType;
 import net.orbyfied.j8.command.argument.TypeIdentifier;
 import net.orbyfied.j8.command.argument.TypeResolver;
 import net.orbyfied.j8.util.StringReader;
 import net.orbyfied.j8.util.functional.TriConsumer;
-import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
 
-import java.util.UUID;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 
-public class MinecraftArgumentTypes {
-
-    /** UTILITY CLASS */
-    private MinecraftArgumentTypes() { }
+public class BungeeArgumentTypes {
 
     /**
      * The singleton type resolver.
@@ -84,24 +81,14 @@ public class MinecraftArgumentTypes {
         return type;
     }
 
-    //////////////////////////////////////////////
+    /////////////////////////////////////////////////////
 
-    public static final ArgumentType<Player> ONLINE_PLAYER_DIRECT = of(Player.class, "minecraft:online_player_direct",
-            (context, reader) -> true,
-            ((context, reader) -> {
-                String s = reader.collect(c -> c != ' ');
-                Player player;
-                if ((player = Bukkit.getPlayer(s)) != null)
-                    return player;
-                return Bukkit.getPlayer(UUID.fromString(s));
-            }),
-            (context, builder, s) -> builder.append(s.getUniqueId()),
-            ((context, suggestions) -> {
-                for (Player player : Bukkit.getOnlinePlayers()) {
-                    suggestions.suggest(player.getName());
-                    suggestions.suggest(player.getUniqueId());
-                }
-            })
+    public static ArgumentType<ProxiedPlayer> ONLINE_PLAYER = of(ProxiedPlayer.class, "bungee:online_player",
+            (context, reader) -> ProxyServer.getInstance().getPlayer(reader.collect(c -> c != ' ')) != null,
+            (context, reader) -> ProxyServer.getInstance().getPlayer(reader.collect(c -> c != ' ')),
+            (context, builder, player) -> builder.append(player.getName()),
+            (context, accumulator) -> ProxyServer.getInstance().getPlayers()
+                    .stream().map(ProxiedPlayer::getName).forEach(accumulator::suggest)
     );
 
 }

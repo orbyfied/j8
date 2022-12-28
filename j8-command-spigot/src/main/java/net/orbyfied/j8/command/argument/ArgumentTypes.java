@@ -24,11 +24,11 @@ import java.util.function.*;
  */
 public class ArgumentTypes {
 
-    interface CompleterFunc {
+    public interface CompleterFunc {
         void doSuggestions(Context ctx, StringReader reader, SuggestionAccumulator acc);
     }
 
-    interface GenericCompleterFunc {
+    public interface GenericCompleterFunc {
         void doSuggestions(Context ctx,
                            StringReader reader,
                            SuggestionAccumulator acc,
@@ -276,21 +276,16 @@ public class ArgumentTypes {
      * Base 10 number suggestions.
      */
     private static final CompleterFunc BASE_10_COMPLETER_FUNC = ((ctx, reader, acc) -> {
-        String pre = reader.collect(c -> c != ' ');
         for (int i = 0; i < 10; i++)
-            acc.suggest(pre + i);
+            acc.suggest(i);
     });
 
     /**
      * Base 10 number suggestions.
      */
     private static final CompleterFunc BASE_10_F_COMPLETER_FUNC = ((ctx, reader, acc) -> {
-        String pre = reader.collect(c -> c != ' ');
-        String ext = "";
-        if (!pre.contains("."))
-            ext = ".";
         for (int i = 0; i < 10; i++)
-            acc.suggest(pre + i + ext);
+            acc.suggest(i);
     });
 
     /* ----------------------------------------------- */

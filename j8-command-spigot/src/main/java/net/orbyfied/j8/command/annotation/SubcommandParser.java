@@ -7,8 +7,11 @@ import net.orbyfied.j8.command.argument.Flag;
 import net.orbyfied.j8.command.argument.Argument;
 import net.orbyfied.j8.command.argument.ArgumentType;
 import net.orbyfied.j8.command.argument.TypeIdentifier;
+import net.orbyfied.j8.command.impl.CommandNodeExecutor;
 import net.orbyfied.j8.registry.Identifier;
 import net.orbyfied.j8.util.StringReader;
+
+import java.util.function.Consumer;
 
 public class SubcommandParser {
 
@@ -77,7 +80,7 @@ public class SubcommandParser {
                 // create and set node
                 current = current.getOrCreateChild(component,
                         parent -> new Node(component, parent, parent.root())
-                                .executes(null));
+                                .executes((CommandNodeExecutor) null));
 
                 // store state
                 last = current;
@@ -168,9 +171,9 @@ public class SubcommandParser {
 
         // make sure to always set executable
         if (current.getComponentOf(Primary.class) == null)
-            current.executes(null);
+            current.executes((CommandNodeExecutor) null);
         if (last.getComponentOf(Primary.class) == null)
-            last.executes(null);
+            last.executes((CommandNodeExecutor) null);
 
         // return
         return last;

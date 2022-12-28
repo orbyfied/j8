@@ -1,9 +1,10 @@
 package net.orbyfied.j8.command;
 
 import net.md_5.bungee.api.ChatColor;
+import net.md_5.bungee.api.chat.BaseComponent;
+import net.md_5.bungee.api.chat.TextComponent;
 import net.orbyfied.j8.command.argument.Argument;
 import net.orbyfied.j8.command.argument.options.ArgumentOptions;
-import net.orbyfied.j8.command.component.Executable;
 import net.orbyfied.j8.command.exception.CommandHaltException;
 import net.orbyfied.j8.command.argument.Flag;
 import net.orbyfied.j8.registry.Identifier;
@@ -15,7 +16,7 @@ import java.util.*;
 public class Context {
 
     public Context(CommandManager engine,
-                   CommandSender sender) {
+                   Sender sender) {
         this.engine = engine;
         this.sender = sender;
     }
@@ -23,7 +24,7 @@ public class Context {
     /**
      * The sender of the command.
      */
-    protected final CommandSender sender;
+    protected final Sender sender;
 
     /**
      * The purspose of this invocation.
@@ -48,7 +49,7 @@ public class Context {
     /**
      * The intermediate status text.
      */
-    protected String intermediateText;
+    protected BaseComponent[] intermediateText;
 
     /**
      * If the text can be formatted.
@@ -112,13 +113,16 @@ public class Context {
         return engine;
     }
 
-    @SuppressWarnings("unchecked")
+    public Sender wrappedSender() {
+        return sender;
+    }
+
     public <S extends CommandSender> S sender() {
-        return (S) sender;
+        return sender.as();
     }
 
     public boolean senderIs(Class<? extends CommandSender> cClass) {
-        return cClass.isAssignableFrom(sender.getClass());
+        return sender.is(cClass);
     }
 
     public Target target() {
@@ -129,14 +133,19 @@ public class Context {
         return target == Target.SUGGEST;
     }
 
-    public String intermediateText() {
+    public BaseComponent[] intermediateText() {
         return intermediateText;
     }
 
     public Context intermediateText(String text) {
         if (!canFormat)
             text = ChatColor.stripColor(text);
-        this.intermediateText = text;
+        this.intermediateText(TextComponent.fromLegacyText(text));
+        return this;
+    }
+
+    public Context intermediateText(BaseComponent[] components) {
+        this.intermediateText = components;
         return this;
     }
 

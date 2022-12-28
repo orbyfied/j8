@@ -1,13 +1,16 @@
 package net.orbyfied.j8.command.impl;
 
+import net.md_5.bungee.api.chat.BaseComponent;
 import net.orbyfied.j8.command.*;
 import net.orbyfied.j8.command.component.Properties;
 import net.orbyfied.j8.command.minecraft.MinecraftArgumentTypes;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.command.SimpleCommandMap;
 import org.bukkit.command.defaults.BukkitCommand;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 
@@ -21,6 +24,49 @@ import java.util.Locale;
  * TODO: find a way to get the message above the textbox
  */
 public class BukkitCommandManager extends CommandManager {
+
+    public static final Sender CONSOLE_SENDER = new Sender() {
+        // the command sender
+        final ConsoleCommandSender sender = Bukkit.getConsoleSender();
+
+        @Override
+        public void sendMessage(BaseComponent[] components) {
+            sender.sendMessage(components);
+        }
+
+        @Override
+        public boolean hasPermission(String perm) {
+            return sender.hasPermission(perm);
+        }
+
+        @Override
+        public Object unwrap() {
+            return sender;
+        }
+    };
+
+    public static Sender wrapSender(CommandSender sender) {
+        if (sender instanceof Player player) {
+            return new Sender() {
+                @Override
+                public void sendMessage(BaseComponent[] components) {
+                    player.sendMessage(components);
+                }
+
+                @Override
+                public boolean hasPermission(String perm) {
+                    return player.hasPermission(perm);
+                }
+
+                @Override
+                public Object unwrap() {
+                    return player;
+                }
+            };
+        } else {
+            return CONSOLE_SENDER;
+        }
+    }
 
     private static final SimpleCommandMap commandMap = (SimpleCommandMap) Bukkit.getCommandMap();
 
@@ -123,8 +169,8 @@ public class BukkitCommandManager extends CommandManager {
         @Override
         public boolean execute(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args) {
             String str = stitchArgs(alias, args);
-            Context ctx = engine.dispatch(sender, str, null, null);
-            if (ctx.intermediateText() != null && !ctx.intermediateText().isBlank())
+            Context ctx = engine.dispatch(wrapSender(sender), str, null, null);
+            if (ctx.intermediateText() != null && ctx.intermediateText().length != 0)
                 sender.sendMessage(ctx.intermediateText());
             return ctx.successful();
         }
@@ -133,7 +179,7 @@ public class BukkitCommandManager extends CommandManager {
         public @NotNull List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args, Location location) throws IllegalArgumentException {
             List<String> list = new ArrayList<>();
             String str = stitchArgs(alias, args);
-            Context ctx = engine.dispatch(sender, str, createSuggestionAccumulator(list), null);
+            Context ctx = engine.dispatch(wrapSender(sender), str, createSuggestionAccumulator(list), null);
             return list;
         }
 

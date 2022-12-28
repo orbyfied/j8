@@ -27,7 +27,7 @@ public class Secure extends AbstractNodeComponent implements Functional {
         // perform check: permission node
         String permission;
         if (permissionLock != null && (permission = permissionLock.apply(ctx)) != null)
-            if (!ctx.sender().hasPermission(permission))
+            if (!ctx.wrappedSender().hasPermission(permission))
                 failSecurity(ctx, "Lacking Permission");
     }
 

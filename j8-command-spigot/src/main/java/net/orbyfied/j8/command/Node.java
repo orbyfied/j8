@@ -375,7 +375,6 @@ public class Node {
         }
 
         if (highest != null) {
-            System.out.println(highest.getNode().getName());
             return highest.getNode();
         }
 
@@ -418,7 +417,7 @@ public class Node {
     }
 
     public List<String> getAliases() {
-        return Collections.unmodifiableList(aliases);
+        return aliases;
     }
 
     public Node root() {
@@ -601,6 +600,15 @@ public class Node {
         return this;
     }
 
+    public Node setExecutor(Consumer<Context> executor) {
+        return executes(executor);
+    }
+
+    public Node executes(Consumer<Context> executor) {
+        component(Executable.class, Executable::new).setExecutor((ctx, cmd) -> executor.accept(ctx));
+        return this;
+    }
+
     public Node executes(CommandNodeExecutor executor, CommandNodeExecutor walked) {
         component(Executable.class, Executable::new).setExecutor(executor).setWalkExecutor(walked);
         return this;
@@ -705,11 +713,19 @@ public class Node {
         return node;
     }
 
+    public Node thenExecute(String name, Consumer<Context> executor) {
+        return thenExecute(name, (ctx, cmd) -> executor.accept(ctx));
+    }
+
     public Node thenExecute(String name, CommandNodeExecutor executor, Consumer<Node> consumer) {
         Node n = thenExecute(name, executor);
         if (consumer != null)
             consumer.accept(n);
         return this;
+    }
+
+    public Node thenExecute(String name, Consumer<Context> executor, Consumer<Node> consumer) {
+        return thenExecute(name, (ctx, cmd) -> executor.accept(ctx), consumer);
     }
 
     public Node thenExecute(String name, CommandNodeExecutor executor, BiConsumer<Node, Executable> consumer) {

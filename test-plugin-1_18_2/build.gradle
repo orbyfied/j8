@@ -30,7 +30,7 @@ dependencies {
     implementation project(":j8-registry")
     implementation project(":j8-util-bukkit")
     implementation project(":j8-config-bukkit")
-    implementation project(":j8-command-bukkit")
+    implementation project(":j8-command-spigot")
 
     // External Libraries
     // ...

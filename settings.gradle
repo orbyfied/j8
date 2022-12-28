@@ -21,10 +21,11 @@ include 'j8-text'
 
 include 'j8-util-bukkit'
 include 'j8-config-bukkit'
-include 'j8-command-bukkit'
+include 'j8-command-spigot'
 
 include 'test-plugin-1_18_2'
 include 'j8-render'
 include 'j8-math-expr'
 include 'j8-util-expr'
+include 'bootstrap-plugin-bukkit-1_18_2'
 

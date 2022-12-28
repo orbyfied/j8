@@ -51,7 +51,7 @@ public class CommandException extends RuntimeException {
     }
 
     public String getFormattedSuffix() {
-        return ChatColor.YELLOW + (getMessage() != null ? ": " + getMessage() : "") +
+        return ChatColor.RED + (getMessage() != null ? ": " + getMessage() : "") +
                 (getCause() != null ? ": " + getCause().getMessage() : "");
     }
 
