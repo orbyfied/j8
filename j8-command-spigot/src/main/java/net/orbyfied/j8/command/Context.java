@@ -117,11 +117,19 @@ public class Context {
         return sender;
     }
 
-    public <S extends CommandSender> S sender() {
+    public <S extends CommandSender> S bukkitSender() {
         return sender.as();
     }
 
-    public boolean senderIs(Class<? extends CommandSender> cClass) {
+    public <S extends net.md_5.bungee.api.CommandSender> S bungeeSender() {
+        return sender.as();
+    }
+
+    public <S> S sender() {
+        return sender.as();
+    }
+
+    public boolean senderIs(Class<?> cClass) {
         return sender.is(cClass);
     }
 

@@ -1,7 +1,7 @@
 package net.orbyfied.j8.command.exception;
 
 import net.orbyfied.j8.util.StringReader;
-import org.bukkit.ChatColor;
+import net.md_5.bungee.api.ChatColor;
 
 /**
  * The location of an error in
@@ -78,8 +78,8 @@ public class ErrorLocation {
         String str = reader.getString();
 
         StringBuilder b = new StringBuilder();
-        b.append(org.bukkit.ChatColor.RED).append("(").append(fromIndex).append(":").append(toIndex).append(")")
-                .append(org.bukkit.ChatColor.RESET);
+        b.append(net.md_5.bungee.api.ChatColor.RED).append("(").append(fromIndex).append(":").append(toIndex).append(")")
+                .append(net.md_5.bungee.api.ChatColor.RESET);
 
         if (toIndex >= str.length())
             str = str + " ";
@@ -94,11 +94,11 @@ public class ErrorLocation {
         int ee = Math.max(0, Math.min(l, toIndex + off));
 
         b
-                .append(org.bukkit.ChatColor.RESET + "" + org.bukkit.ChatColor.DARK_GRAY).append("...")
-                .append(org.bukkit.ChatColor.RESET + "" + org.bukkit.ChatColor.GRAY).append(str.substring(ss, se))
-                .append(org.bukkit.ChatColor.RESET + "" + org.bukkit.ChatColor.RED + "" + org.bukkit.ChatColor.UNDERLINE).append(str.substring(bs, be))
-                .append(org.bukkit.ChatColor.RESET + "" + org.bukkit.ChatColor.GRAY).append(str.substring(es, ee))
-                .append(org.bukkit.ChatColor.RESET + "" + ChatColor.DARK_GRAY).append("...");
+                .append(net.md_5.bungee.api.ChatColor.RESET + "" + net.md_5.bungee.api.ChatColor.DARK_GRAY).append("...")
+                .append(net.md_5.bungee.api.ChatColor.RESET + "" + net.md_5.bungee.api.ChatColor.GRAY).append(str.substring(ss, se))
+                .append(net.md_5.bungee.api.ChatColor.RESET + "" + net.md_5.bungee.api.ChatColor.RED + "" + net.md_5.bungee.api.ChatColor.UNDERLINE).append(str.substring(bs, be))
+                .append(net.md_5.bungee.api.ChatColor.RESET + "" + net.md_5.bungee.api.ChatColor.GRAY).append(str.substring(es, ee))
+                .append(net.md_5.bungee.api.ChatColor.RESET + "" + ChatColor.DARK_GRAY).append("...");
         return b.toString();
     }
 

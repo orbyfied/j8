@@ -27,20 +27,20 @@ public class J8TestPlugin extends JavaPlugin {
 
         Node helloCmd = commandManager.command("hello")
                 .executes((ctx, cmd) -> {
-                    ctx.sender().sendMessage("hehehhehehehheheehehhehhe");
+                    ctx.bukkitSender().sendMessage("hehehhehehehheheehehhehhe");
                 })
                 .thenExecute("hi", (ctx, cmd) -> {
-                    ctx.sender().sendMessage(ChatColor.translateAlternateColorCodes('&',
+                    ctx.bukkitSender().sendMessage(ChatColor.translateAlternateColorCodes('&',
                             ctx.getFlagValue("hi", String.class)));
                 })
                 .flag("hi", ArgumentTypes.STRING)
                 .root()
                 .thenExecute("a", (ctx, cmd) -> {
-                    ctx.sender().sendMessage("a");
+                    ctx.bukkitSender().sendMessage("a");
                 })
                 .thenArgument("player", MinecraftArgumentTypes.ONLINE_PLAYER_DIRECT)
                 .thenExecute("b", (ctx, cmd) -> {
-                    ctx.sender().sendMessage(ctx.<Player>getArgument("player").getName());
+                    ctx.bukkitSender().sendMessage(ctx.<Player>getArgument("player").getName());
                 })
                 .root()
                 .thenExecute("yo", (context, cmd) -> {
@@ -48,17 +48,17 @@ public class J8TestPlugin extends JavaPlugin {
                     Integer num = context.getArgument("num");
 
                     if (context.getFlagValue("fb", Boolean.class, false)) {
-                        context.sender().sendMessage("hi " + name + "-" + num);
+                        context.bukkitSender().sendMessage("hi " + name + "-" + num);
                     } else {
-                        context.sender().sendMessage("hello " + name + "-" + num);
+                        context.bukkitSender().sendMessage("hello " + name + "-" + num);
                     }
 
                     String sus;
                     if ((sus = context.getFlagValue("fa")) != null)
-                        context.sender().sendMessage("SUS: " + sus);
+                        context.bukkitSender().sendMessage("SUS: " + sus);
 
-                    context.sender().sendMessage("fc: " + context.getFlagValue("fc"));
-                    context.sender().sendMessage("fd: " + context.getFlagValue("fd"));
+                    context.bukkitSender().sendMessage("fc: " + context.getFlagValue("fc"));
+                    context.bukkitSender().sendMessage("fd: " + context.getFlagValue("fd"));
                 })
                 .permission("yo.mama")
                 .flag("fa", ArgumentTypes.STRING)

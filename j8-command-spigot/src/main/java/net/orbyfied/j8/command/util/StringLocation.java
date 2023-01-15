@@ -1,7 +1,7 @@
 package net.orbyfied.j8.command.util;
 
 import net.orbyfied.j8.util.StringReader;
-import org.bukkit.ChatColor;
+import net.md_5.bungee.api.ChatColor;
 
 public class StringLocation implements StringLocatable<Void> {
 

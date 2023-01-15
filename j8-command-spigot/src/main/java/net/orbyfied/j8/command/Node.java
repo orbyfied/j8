@@ -14,7 +14,7 @@ import net.orbyfied.j8.command.argument.Argument;
 import net.orbyfied.j8.command.argument.ArgumentType;
 import net.orbyfied.j8.util.ReflectionUtil;
 import net.orbyfied.j8.util.StringReader;
-import org.bukkit.ChatColor;
+import net.md_5.bungee.api.ChatColor;
 
 import java.io.PrintStream;
 import java.util.*;

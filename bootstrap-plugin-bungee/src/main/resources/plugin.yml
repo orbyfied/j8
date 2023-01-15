@@ -1,0 +1,8 @@
+name: J8BungeeBootstrap
+main: net.orbyfied.j8.BungeeBootstrapPlugin
+version: 1.0.0
+
+libraries:
+  - net.orbyfied.j8:j8-registry:0.1.0
+  - net.orbyfied.j8:j8-util:0.2.2.1
+  - net.orbyfied.j8:j8-event:0.1.0_hotfix1

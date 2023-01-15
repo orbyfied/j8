@@ -4,7 +4,7 @@ import net.orbyfied.j8.command.AbstractNodeComponent;
 import net.orbyfied.j8.command.Context;
 import net.orbyfied.j8.command.Node;
 import net.orbyfied.j8.util.StringReader;
-import org.bukkit.ChatColor;
+import net.md_5.bungee.api.ChatColor;
 
 import java.util.function.Function;
 

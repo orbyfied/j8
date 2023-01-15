@@ -503,47 +503,6 @@ public class ArgumentTypes {
             })
     );
 
-    public static final ArgumentType<Vector> VECTOR_3F = of(Vector.class, "system:vec3f",
-            (context, reader) -> reader.current() == '(' || isDigit(reader.current(), 10),
-            ((context, reader) -> {
-                boolean bracketed = false;
-                if (reader.current() == '(') {
-                    bracketed = true;
-                    reader.next();
-                }
-
-                double[] c = new double[3];
-                for (int i = 0; i < 3; i++) {
-                    c[i] = ArgumentTypes.DOUBLE.parse(context, reader);
-                    if (!bracketed)
-                        reader.collect(c1 -> c1 != ' ', 1);
-                    else
-                        reader.collect(c1 -> c1 != ',' && c1 != ')', 1);
-                }
-
-                return new Vector(c[0], c[1], c[2]);
-            }),
-            ((context, builder, vector) -> {
-                builder.append("(")
-                        .append(vector.getX()).append(", ")
-                        .append(vector.getY()).append(", ")
-                        .append(vector.getZ()).append(")");
-            }),
-            ((CompleterFunc)(context, reader, acc) -> {
-                boolean bracketed = false;
-                if (reader.current() == '(') {
-                    bracketed = true;
-                    reader.next();
-                }
-
-                for (int i = 0; i < 3; i++) {
-                    DOUBLE.parse(context, reader);
-                    if (!bracketed) reader.collect(c1 -> c1 != ' ', 1);
-                    else            reader.collect(c1 -> c1 != ',' && c1 != ')', 1);
-                }
-            })
-    );
-
     public static final ArgumentType<TypeIdentifier> TYPE_IDENTIFIER = of(TypeIdentifier.class, "system:type_identifier",
             (context, reader) -> true,
             (context, reader) -> TypeIdentifier.of(reader.collect(c -> c != ' ')),

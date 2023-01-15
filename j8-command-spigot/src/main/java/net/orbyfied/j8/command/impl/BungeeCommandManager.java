@@ -9,6 +9,7 @@ import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.api.plugin.TabExecutor;
 import net.orbyfied.j8.command.*;
 import net.orbyfied.j8.command.component.Properties;
+import net.orbyfied.j8.command.minecraft.BungeeArgumentTypes;
 import net.orbyfied.j8.command.minecraft.MinecraftArgumentTypes;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -73,7 +74,7 @@ public class BungeeCommandManager extends CommandManager {
         this.fallbackPrefix = plugin.getDescription().getName().toLowerCase(Locale.ROOT);
 
         ((DelegatingNamespacedTypeResolver)getTypeResolver())
-                .namespace("minecraft", MinecraftArgumentTypes.typeResolver);
+                .namespace("bungee", BungeeArgumentTypes.typeResolver);
     }
 
     public BungeeCommandManager setFallbackPrefix(String fallbackPrefix) {

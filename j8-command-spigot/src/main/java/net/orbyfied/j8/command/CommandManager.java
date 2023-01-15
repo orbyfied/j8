@@ -11,7 +11,7 @@ import net.orbyfied.j8.command.argument.Flag;
 import net.orbyfied.j8.command.argument.Argument;
 import net.orbyfied.j8.command.argument.TypeResolver;
 import net.orbyfied.j8.util.StringReader;
-import org.bukkit.ChatColor;
+import net.md_5.bungee.api.ChatColor;
 import org.bukkit.command.CommandSender;
 
 import java.util.ArrayList;
@@ -42,7 +42,7 @@ public abstract class CommandManager {
 
     public CommandManager() {
         typeResolver = new DelegatingNamespacedTypeResolver()
-                .namespace("system",    ArgumentTypes.typeResolver);
+                .namespace("system", ArgumentTypes.typeResolver);
     }
 
     public CommandManager register(Node command) {
