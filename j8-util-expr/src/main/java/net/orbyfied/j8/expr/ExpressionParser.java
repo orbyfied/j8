@@ -277,7 +277,7 @@ public class ExpressionParser {
     private ASTNode node$factor() {
         // get token
         Token<?> tok = tokenReader.current();
-        if (tok == null) throw new SyntaxError("EOF");
+        if (tok == null) throw new SyntaxError("Unexpected EOF");
 
         // return node
         ASTNode node;

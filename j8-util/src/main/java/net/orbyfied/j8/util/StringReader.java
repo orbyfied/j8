@@ -3,6 +3,7 @@ package net.orbyfied.j8.util;
 import java.io.PrintStream;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
@@ -267,6 +268,23 @@ public class StringReader {
 
     public StringReader branch() {
         return new StringReader(str, index);
+    }
+
+    public String escapeRemaining(Predicate<Character> toEscape,
+                                  Function<Character, String> escapeFunc) {
+        StringBuilder b = new StringBuilder();
+        char c = current();
+        while (c != DONE) {
+            if (toEscape.test(c)) {
+                b.append(escapeFunc.apply(c));
+            } else {
+                b.append(c);
+            }
+
+            c = next();
+        }
+
+        return b.toString();
     }
 
     /* ----- Utilities ----- */

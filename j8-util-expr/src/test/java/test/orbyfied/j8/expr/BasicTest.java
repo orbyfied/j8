@@ -1,12 +1,14 @@
 package test.orbyfied.j8.expr;
 
 import net.orbyfied.j8.expr.ExpressionParser;
+import net.orbyfied.j8.expr.ast.ASTNode;
 import net.orbyfied.j8.expr.ast.BinOpNode;
 import net.orbyfied.j8.expr.ast.ConstantNode;
 import net.orbyfied.j8.expr.ast.exec.ASTEvaluationContext;
 import net.orbyfied.j8.expr.ast.exec.EvalValue;
 import net.orbyfied.j8.expr.error.ExprException;
 import net.orbyfied.j8.expr.parser.Operator;
+import net.orbyfied.j8.tests.Benchmarks;
 import org.junit.jupiter.api.Test;
 
 public class BasicTest {
@@ -53,7 +55,7 @@ public class BasicTest {
     void test_BasicExec() {
         // create parser
         final ExpressionParser parser = new ExpressionParser()
-                .withSetting("ConstantOptimization", false);
+                .withSetting("ConstantOptimization", true);
 
         // specify string and parse
         try {
@@ -85,6 +87,45 @@ public class BasicTest {
                 new ConstantNode(new EvalValue<>(EvalValue.TYPE_NUMBER, 2.0))
         ).evaluate(ctx);
         System.out.println(ctx.popValue());
+    }
+
+    @Test
+    void bench_EvalConstVSTree() {
+        // the expression
+        final String expr = "8 * (-2 + --4 * 9.9) + 0b1101 / 0x69 * 9 + (6 * 7 * (4 + 5.25))";
+
+        // create parsers
+        final ExpressionParser unoptimizedParser = new ExpressionParser()
+                .withSetting("ConstantOptimization", false);
+        final ExpressionParser optimizedParser = new ExpressionParser()
+                .withSetting("ConstantOptimization", true);
+
+        // parse values
+        ASTNode unOptNode = unoptimizedParser.file(expr).tokenize().parse().getHeadNode();
+        ASTNode optNode   = optimizedParser.file(expr).tokenize().parse().getHeadNode();
+
+        // warm up
+        ASTEvaluationContext wuContext = new ASTEvaluationContext();
+        for (int i = 0; i < 100_000; i++) {
+            optNode.evaluate(wuContext);
+            wuContext.popValue();
+        }
+
+        {
+            final ASTEvaluationContext context = new ASTEvaluationContext();
+            Benchmarks.performBenchmark("UnoptimizedParserExec", i -> {
+                unOptNode.evaluate(context);
+                context.popValue();
+            }, 100_000_000, 1_000_000_000).print();
+        }
+
+        {
+            final ASTEvaluationContext context = new ASTEvaluationContext();
+            Benchmarks.performBenchmark("OptimizedParserExec", i -> {
+                optNode.evaluate(context);
+                context.popValue();
+            }, 100_000_000, 1_000_000_000).print();
+        }
     }
 
 }

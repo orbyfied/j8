@@ -1,20 +1,12 @@
-package net.orbyfied.j8.command.impl;
+package net.orbyfied.j8.command;
 
 import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.ProxyServer;
-import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.plugin.Command;
 import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.api.plugin.TabExecutor;
-import net.orbyfied.j8.command.*;
-import net.orbyfied.j8.command.component.Properties;
-import net.orbyfied.j8.command.minecraft.BungeeArgumentTypes;
-import net.orbyfied.j8.command.minecraft.MinecraftArgumentTypes;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.command.ConsoleCommandSender;
-import org.jetbrains.annotations.NotNull;
+import net.orbyfied.j8.command.impl.DelegatingNamespacedTypeResolver;
 
 import java.util.*;
 
@@ -23,11 +15,6 @@ public class BungeeCommandManager extends CommandManager {
     public static final Sender CONSOLE_SENDER = new Sender() {
         // the command sender
         final CommandSender sender = ProxyServer.getInstance().getConsole();
-
-        @Override
-        public void sendMessage(BaseComponent[] components) {
-            sender.sendMessage(components);
-        }
 
         @Override
         public boolean hasPermission(String perm) {
@@ -43,11 +30,6 @@ public class BungeeCommandManager extends CommandManager {
     public static Sender wrapSender(CommandSender sender) {
         if (sender instanceof ProxiedPlayer player) {
             return new Sender() {
-                @Override
-                public void sendMessage(BaseComponent[] components) {
-                    player.sendMessage(components);
-                }
-
                 @Override
                 public boolean hasPermission(String perm) {
                     return player.hasPermission(perm);
@@ -165,10 +147,10 @@ public class BungeeCommandManager extends CommandManager {
         }
 
         @Override
-        public void execute(@NotNull CommandSender sender, @NotNull String[] args) {
+        public void execute(CommandSender sender, String[] args) {
             String str = stitchArgs(getName(), args);
             Context ctx = engine.dispatch(wrapSender(sender), str, null, null);
-            if (ctx.intermediateText() != null && ctx.intermediateText().length != 0)
+            if (ctx.intermediateText() != null && ctx.intermediateText().length() != 0)
                 sender.sendMessage(ctx.intermediateText());
         }
 

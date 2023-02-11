@@ -29,4 +29,7 @@ include 'j8-math-expr'
 include 'j8-util-expr'
 include 'bootstrap-plugin-bukkit-1_18_2'
 include 'bootstrap-plugin-bungee'
+include 'j8-command'
+include 'j8-command-bukkit'
+include 'j8-command-bungee'
 

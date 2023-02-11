@@ -94,19 +94,44 @@ public class ASTEvaluationContext {
     //// VALUE STACK
     /////////////////////////
 
-    // the value stack
-    protected final FastStack<EvalValue<?>> valueStack = new FastStack<>(50);
+    // the value array
+    EvalValue<?>[] vsArr;
+    // the stack pointer
+    int vsPtr = -1;
 
-    public FastStack<EvalValue<?>> getValueStack() {
-        return valueStack;
+    {
+        allocateValueStack(50);
+    }
+
+    public void allocateValueStack(int size) {
+        EvalValue<?>[] oldArr = vsArr;
+        this.vsArr = new EvalValue<?>[size];
+        if (vsPtr >= size) vsPtr = size - 1;
+        if (oldArr != null)
+            System.arraycopy(oldArr, 0, vsArr, 0, oldArr.length);
+    }
+
+    public EvalValue<?> getValue(int idx) {
+        return vsArr[idx];
+    }
+
+    public EvalValue<?> peekValue() {
+        if (vsPtr == -1) return null;
+        return vsArr[vsPtr];
     }
 
     public EvalValue<?> popValue() {
-        return valueStack.popOr(EvalValue.NIL);
+        if (vsPtr == -1) return null;
+        EvalValue<?> r = vsArr[vsPtr];
+        vsArr[vsPtr--] = null;
+        return r;
     }
 
     public void pushValue(EvalValue<?> value) {
-        valueStack.push(value);
+        vsPtr++;
+        if (vsPtr >= vsArr.length)
+            allocateValueStack((int) (vsArr.length * 1.5));
+        vsArr[vsPtr] = value;
     }
 
 }

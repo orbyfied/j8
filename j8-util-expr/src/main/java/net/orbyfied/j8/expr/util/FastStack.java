@@ -57,14 +57,14 @@ public class FastStack<T> {
     public T pop() {
         if (ptr == -1) return null;
         T r = arr[ptr];
-        ptr--;
+        arr[ptr--] = null;
         return r;
     }
 
     public T popOr(T e) {
         if (ptr == -1) return e;
         T r = arr[ptr];
-        ptr--;
+        arr[ptr--] = null;
         return r;
     }
 
@@ -73,6 +73,14 @@ public class FastStack<T> {
         if (ptr >= arr.length)
             allocate((int) (arr.length * 1.5));
         arr[ptr] = value;
+    }
+
+    public int size() {
+        return ptr;
+    }
+
+    public int allocated() {
+        return arr.length;
     }
 
 }
